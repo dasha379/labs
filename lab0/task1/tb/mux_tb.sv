@@ -12,36 +12,27 @@ module mux_tb;
 	 .data_o     (data_o_tb     )
   );
   
+  task test
+   (
+	  input [1:0] td0, td1, td2, td3,
+	  input [1:0] tdirection_i,
+	  input [1:0] tdata 
+	);
+    { d0, d1, d2, d3, direction_i_tb } = { td0, td1, td2, td3, tdirection_i };
+	 
+	 #1ns;
+	 
+	 if ( data_o_tb != tdata ) begin
+	   $display("fail: expected %b got %b", tdata, data_o_tb);
+		$finish(1);
+	 end
+  endtask
+  
   initial begin
-    d0 = 2'b01; d1 = 2'b10; d2 = 2'b11; d3 = 2'b00;
-    direction_i_tb = 2'b00;
-	 #10ns;
-	 if ( data_o_tb != d0 ) begin
-      $display("error: expected %s got %s", d0, data_o_tb);
-		$finish(1);
-	 end
-    
-    direction_i_tb = 2'b01;
-	 #10ns;
-	 if ( data_o_tb != d1 ) begin
-      $display("error: expected %s got %s", d1, data_o_tb);
-		$finish(1);
-	 end
-   
-
-    direction_i_tb = 2'b10;
-	 #10ns;
-	 if ( data_o_tb != d2 ) begin
-      $display("error: expected %s got %s", d2, data_o_tb);
-		$finish(1);
-	 end
-
-    direction_i_tb = 2'b11;
-	 #10ns;
-	 if ( data_o_tb != d3 ) begin
-      $display("error: expected %s got %s", d3, data_o_tb);
-		$finish(1);
-	 end
+    test(2'b01, 2'b00, 2'b11, 2'b10, 0, 2'b01);
+	 test(2'b01, 2'b00, 2'b11, 2'b10, 1, 2'b00);
+	 test(2'b01, 2'b00, 2'b11, 2'b10, 2, 2'b11);
+	 test(2'b01, 2'b00, 2'b11, 2'b10, 3, 2'b10);
     
 	 $display("passed, 0 errors");
     $finish;
