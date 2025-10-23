@@ -21,7 +21,7 @@ module mux_tb;
     { d0, d1, d2, d3, direction_i_tb } = { td0, td1, td2, td3, tdirection_i };
 	 
 	 #1ns;
-	 
+
 	 if ( data_o_tb != tdata ) begin
 	   $display("fail: expected %b got %b", tdata, data_o_tb);
 		$finish(1);
@@ -33,6 +33,23 @@ module mux_tb;
 	 test(2'b01, 2'b00, 2'b11, 2'b10, 1, 2'b00);
 	 test(2'b01, 2'b00, 2'b11, 2'b10, 2, 2'b11);
 	 test(2'b01, 2'b00, 2'b11, 2'b10, 3, 2'b10);
+	 
+	 for (int j = 0; j < 10; j++) begin
+		 for (int i = 0; i < 4; i++ ) begin
+			d0 = $urandom_range(3);
+			d1 = $urandom_range(3);
+			d2 = $urandom_range(3);
+			d3 = $urandom_range(3);
+			direction_i_tb = i;
+			
+			case(direction_i_tb)
+			  0: test(d0, d1, d2, d3, 0, d0);
+			  1: test(d0, d1, d2, d3, 1, d1);
+			  2: test(d0, d1, d2, d3, 2, d2);
+			  3: test(d0, d1, d2, d3, 3, d3);
+			endcase
+		 end
+	 end
     
 	 $display("passed, 0 errors");
     $finish;
