@@ -21,7 +21,7 @@ module priority_encoder_4_tb;
     .data_val_o  ( data_val_o_tb   )
   );
 
-  function data_result form_results( input [3:0] tdata );
+  function data_result form_results( input logic [3:0] tdata );
     data_result res;
 
     casez( tdata )
@@ -46,8 +46,8 @@ module priority_encoder_4_tb;
 
   task test
   (
-    input [3:0] tdata,
-    input       tdata_val_i
+    input logic [3:0] tdata,
+    input logic       tdata_val_i
   );
     logic [3:0] tdata_left, tdata_right;
     logic tdata_val_o;
@@ -81,9 +81,11 @@ module priority_encoder_4_tb;
     test(4'b0000, 0);
 
     // test which covers all the cases without $random
-    for ( int i = 0; i < 16; i++ ) begin
-      test(i, 1);
-      test(i, 0);
+    d = 4'b0000;
+    for ( int i = 0; i < 15; i++ ) begin
+      d += 4'b1;
+      test(d, 1);
+      test(d, 0);
     end
 
     // 5 random iterations
