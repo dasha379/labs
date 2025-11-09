@@ -41,7 +41,7 @@ module delay_15_tb;
       $error("expected %b, got %b, time = %0d", data_i_tb, data_o_tb, $time);
     else if ( data_o_tb != 1'b0 && rst )
       $error("expected 0, got %b", data_o_tb);
-    $strobe("data_i_tb = %b, data_o_tb = %b, time = %0d", data_i_tb, data_o_tb, $time);
+    $display("data_i_tb = %b, data_o_tb = %b, time = %0d", data_i_tb, data_o_tb, $time);
   endtask
 
   initial
