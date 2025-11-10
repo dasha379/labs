@@ -48,7 +48,6 @@ module delay_15_tb;
       data_i_tb = 1'b0;
       @( posedge clk );
       data_i_tb = 1'b1;
-      data_cur = data_i_tb;
 
       reset();
 
