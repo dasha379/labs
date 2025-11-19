@@ -15,7 +15,7 @@ module crc_16_ansi_tb;
     .data_o ( data_o )
   );
 
-  initial forever #5 clk <= ~clk;
+  initial forever #5 clk = ~clk;
 
   task reset();
       rst <= '1;
@@ -26,16 +26,16 @@ module crc_16_ansi_tb;
       rst <= '0;
   endtask
 
-  function void form_crc( input data );
+  task form_crc( input data );
     if (expected_crc[15] ^ data)
       expected_crc <= (expected_crc << 1) ^ 16'h8005;
     else
       expected_crc <= expected_crc << 1;
-  endfunction
+  endtask
 
   initial
     begin
-      clk    <= 1'b0;
+      clk     = 1'b0;
       data_i <= 1'b0;
       reset();
 
