@@ -19,9 +19,11 @@ module crc_16_ansi_tb;
 
   task reset();
       rst <= '1;
-      repeat (2) @ ( posedge clk );
-      rst <= '0;
       expected_crc <= 16'h0000;
+      repeat (2) @ ( posedge clk );
+      if ( data_o != 16'h0000 )
+        $error("reset failed");
+      rst <= '0;
   endtask
 
   function void form_crc( input data );
