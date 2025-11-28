@@ -110,8 +110,8 @@ module serializer_tb;
 
   initial
     begin
-      parallel_data <= '0;
-      data_mod <= '0;
+      parallel_data  <= '0;
+      data_mod       <= '0;
       parallel_valid <= '0;
 
       reset();

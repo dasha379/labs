@@ -9,9 +9,9 @@ module serializer(
   output logic busy_o
 );
 
-  int  counter;
+  int          counter;
   logic [15:0] shift;
-  int  param;
+  int          param;
 
   always @ (*)
     begin

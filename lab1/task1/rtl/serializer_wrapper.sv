@@ -9,25 +9,25 @@ module serializer_wrapper(
   output logic busy_o
 );
 
-  reg reg_rst;
-  reg [15:0] reg_data_i;
-  reg [3:0] reg_data_mod_i;
-  reg reg_data_val_i;
+  logic        reg_rst;
+  logic [15:0] reg_data_i;
+  logic [3:0]  reg_data_mod_i;
+  logic        reg_data_val_i;
 
-  reg reg_data_o;
-  reg reg_data_val_o;
-  reg reg_busy;
+  logic reg_data_o;
+  logic reg_data_val_o;
+  logic reg_busy;
 
   always @ (posedge clk_i)
     begin
-      reg_rst <= srst_i;
-      reg_data_i <= data_i;
+      reg_rst        <= srst_i;
+      reg_data_i     <= data_i;
       reg_data_mod_i <= data_mod_i;
       reg_data_val_i <= data_val_i;
 
-      ser_data_o <= reg_data_o;
+      ser_data_o     <= reg_data_o;
       ser_data_val_o <= reg_data_val_o;
-      busy_o <= reg_busy;
+      busy_o         <= reg_busy;
     end
 
   serializer wrap(
