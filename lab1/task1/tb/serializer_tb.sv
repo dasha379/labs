@@ -72,7 +72,7 @@ module serializer_tb;
   endtask
 
   task test(
-    input [width - 1:0] data,
+    input [width - 1:0]   data,
     input [w_index - 1:0] mod
   );
       driver(data, mod);
@@ -87,7 +87,7 @@ module serializer_tb;
   endfunction
 
   task check(
-    input [width - 1:0] data,
+    input [width - 1:0]   data,
     input [w_index - 1:0] mod
   );
     array = create_array(data);
