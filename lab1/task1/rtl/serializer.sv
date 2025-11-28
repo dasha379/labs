@@ -9,55 +9,104 @@ module serializer(
   output logic busy_o
 );
 
-  logic [4:0]  counter;
+  int  counter;
   logic [15:0] shift;
-  logic [4:0]  param;
+  int  param;
+
+  always @ (*)
+    begin
+      case( data_mod_i )
+        0: param = 16;
+        1: param = 0;
+        2: param = 0;
+        default: param = data_mod_i;
+      endcase
+    end
 
   always_ff @ ( posedge clk_i )
     begin
-      if ( srst_i )
-        begin
-          ser_data_o     <= 1'b0;
-          ser_data_val_o <= 1'b0;
-          busy_o         <= 1'b0;
-          counter        <= 4'b0;
-          shift          <= 16'b0;
-          param          <= 5'b0;
-        end
+      if (srst_i)
+        shift <= '0;
       else
         begin
-          if ( data_val_i )
-            begin
-              if ( data_mod_i != 4'b0001 && data_mod_i != 4'b0010 )
-                begin
-                  ser_data_o     <= data_i[15];
-                  ser_data_val_o <= 1'b1;
-                  shift          <= data_i;
-                  counter        <= 5'b1;
-                  busy_o         <= 1'b1;
-                  param          <= (data_mod_i == 4'b0) ? 16 : data_mod_i;
-                end
-            end
+          if ( data_val_i && param )
+            shift <= data_i;
           else
             begin
-              if ( data_mod_i != 4'b0001 && data_mod_i != 4'b0010 )
-                begin
-                  if ( busy_o && counter < param )
-                    begin
-                        ser_data_o     <= shift[14];
-                        ser_data_val_o <= 1'b1;
-                        shift          <= shift << 1;
-                        counter        <= counter + 1'b1;
-                        busy_o         <= 1'b1;
-                    end
-                  else
-                    begin
-                      ser_data_o     <= 1'b0;
-                      ser_data_val_o <= 1'b0;
-                      busy_o         <= 1'b0;
-                      counter        <= 5'b0;
-                    end
-                end
+              if ( busy_o && counter <= param )
+                shift <= shift << 1;
+            end
+        end
+    end
+
+  always_ff @ ( posedge clk_i )
+    begin
+      if (srst_i)
+        counter = 0;
+      else
+        begin
+          if ( data_val_i && param )
+            counter = 1;
+          else
+            begin
+              if ( busy_o && counter <= param )
+                counter += 1;
+              else
+                counter = 0;
+            end
+        end
+    end
+
+  always_ff @ ( posedge clk_i )
+    begin
+      if (srst_i)
+        ser_data_o <= '0;
+      else
+        begin
+          if ( data_val_i && param )
+            ser_data_o <= data_i[15];
+          else
+            begin
+              if ( busy_o && counter <= param )
+                ser_data_o <= shift[14];
+              else
+                ser_data_o <= '0;
+            end
+        end
+    end
+
+  always_ff @ ( posedge clk_i )
+    begin
+      if (srst_i)
+        ser_data_val_o <= '0;
+      else
+        begin
+          if ( data_val_i && param )
+            ser_data_val_o <= '1;
+          else
+            begin
+              if ( busy_o && counter <= param )
+                ser_data_val_o <= '1;
+              else
+                ser_data_val_o <= '0;
+            end
+        end
+    end
+
+  always_ff @ ( posedge clk_i )
+    begin
+      if (srst_i)
+        busy_o <= '0;
+      else
+        begin
+          if ( data_val_i && param )
+            busy_o <= '1;
+          else
+            begin
+              if ( busy_o && counter <= param )
+                busy_o <= '1;
+              else
+                busy_o <= '0;
             end
         end
     end

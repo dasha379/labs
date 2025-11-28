@@ -15,8 +15,7 @@ module serializer_tb;
   logic        busy;
 
   logic [width - 1:0] array;
-  logic               serial_expected;
-  int                 param, flag;
+  int                 param;
 
   serializer DUT (
     .clk_i(clk),
@@ -29,7 +28,11 @@ module serializer_tb;
     .busy_o(busy)
   );
 
-  initial forever #5 clk = ~clk;
+  initial
+    begin
+      clk = '0;
+      forever #5 clk = ~clk;
+    end
 
   task reset();
     rst <= 1'b1;
@@ -50,6 +53,32 @@ module serializer_tb;
     endcase
   endfunction
 
+  task driver(
+    input [width-1:0]   data,
+    input [w_index-1:0] mod
+  );
+    wait(busy == '0);
+    @(posedge clk);
+    parallel_data <= data;
+    data_mod <= mod;
+    parallel_valid <= 1'b1;
+    @(posedge clk);
+    parallel_valid <= 1'b0;
+    #1;
+    if (~serial_valid && mod != 1 && mod != 2)
+      $error("serial valid does not work correctly");
+    if (~busy && mod != 1 && mod != 2)
+      $error("busy does not work correctly");
+  endtask
+
+  task test(
+    input [width - 1:0] data,
+    input [w_index - 1:0] mod
+  );
+      driver(data, mod);
+      check(data, mod);
+  endtask
+
   function [width - 1:0] create_array( input [width - 1:0] data );
     logic [width - 1:0] storage;
     for ( int i = 0; i < width; ++i )
@@ -57,58 +86,30 @@ module serializer_tb;
     return storage;
   endfunction
 
-  task form_serial_data( input int param );
-    array = create_array(parallel_data);
-
-    for (int i = 0; i < param; ++i)
+  task check(
+    input [width - 1:0] data,
+    input [w_index - 1:0] mod
+  );
+    array = create_array(data);
+    param = calculate_valid_bits(mod);
+    if ( serial_valid )
       begin
-        serial_expected = array[i];
-        @(posedge clk);
-        if (serial_data != serial_expected && serial_valid)
+        for (int i = 0; i < param; ++i)
           begin
-            $error("expected = %b , got = %b", serial_expected, serial_data);
-            $finish(1);
+            @(posedge clk);
+            if (serial_data != array[i])
+              $error("expected : %b, got : %b", array[i], serial_data);
           end
       end
     #1;
-    if (serial_valid)
-      $error("serial_valid signal should be 0 after the end of the process");
-    if (busy)
-      $error("busy signal should be 0 after the end of the process");
+    if (serial_valid != '0)
+      $error("serial_valid signal has to be 0 at the end of the process");
+    if (busy != '0)
+      $error("busy signal has to be 0 at the end of the process");
   endtask
-
-  task test
-  (
-    input [width - 1:0]   parallel_data_test,
-    input [w_index - 1:0] data_mod_test
-  );
-    { parallel_data, data_mod } <= { parallel_data_test, data_mod_test };
-    param = calculate_valid_bits(data_mod_test);
-
-    parallel_valid <= 1'b1;
-    flag = 1;
-    @(posedge clk);
-    parallel_valid <= 1'b0;
-    
-    if (flag == 1) begin
-      form_serial_data(param);
-      flag = 0;
-    end
-    else
-      if ( serial_valid != parallel_valid )
-        $error("valid signal works wrong :( ");
-    @(posedge clk);
-    if (param > 0)
-      wait(busy == 1'b0);
-
-  endtask
-
-  logic [width - 1: 0]  a;
-  logic [w_index - 1:0] b;
 
   initial
     begin
-      clk = 1'b0;
       parallel_data <= '0;
       data_mod <= '0;
       parallel_valid <= '0;
@@ -125,9 +126,7 @@ module serializer_tb;
 
       for (int i = 0; i < 7; ++i)
         begin
-            a = width'($urandom());
-            b = w_index'($urandom());
-            test(a, b);
+            test(width'($urandom()), w_index'($urandom()));
         end
       $finish;
     end
