@@ -50,7 +50,7 @@ module serializer(
             shift <= data_i;
           else
             begin
-              if ( busy_o && counter < param )
+              if ( busy_o )
                 shift <= shift << 1;
             end
         end
