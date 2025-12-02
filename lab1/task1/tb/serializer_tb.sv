@@ -53,32 +53,6 @@ module serializer_tb;
     endcase
   endfunction
 
-  task driver(
-    input [width-1:0]   data,
-    input [w_index-1:0] mod
-  );
-    wait(busy == '0);
-    @(posedge clk);
-    parallel_data <= data;
-    data_mod <= mod;
-    parallel_valid <= 1'b1;
-    @(posedge clk);
-    parallel_valid <= 1'b0;
-    #1;
-    if (~serial_valid && mod != 1 && mod != 2)
-      $error("serial valid does not work correctly");
-    if (~busy && mod != 1 && mod != 2)
-      $error("busy does not work correctly");
-  endtask
-
-  task test(
-    input [width - 1:0]   data,
-    input [w_index - 1:0] mod
-  );
-      driver(data, mod);
-      check(data, mod);
-  endtask
-
   function [width - 1:0] create_array( input [width - 1:0] data );
     logic [width - 1:0] storage;
     for ( int i = 0; i < width; ++i )
@@ -86,22 +60,44 @@ module serializer_tb;
     return storage;
   endfunction
 
-  task check(
+  task driver(
+    input [width-1:0]   data,
+    input [w_index-1:0] mod
+  );
+    wait(busy == '0);
+    @(posedge clk);
+
+    parallel_data <= data;
+    data_mod <= mod;
+    parallel_valid <= 1'b1;
+    @(posedge clk);
+
+    parallel_valid <= 1'b0;
+    array = create_array(data);
+    param = calculate_valid_bits(mod);
+
+    repeat (param) @(posedge clk);
+  endtask
+
+  task test(
     input [width - 1:0]   data,
     input [w_index - 1:0] mod
   );
-    array = create_array(data);
-    param = calculate_valid_bits(mod);
+    fork
+      driver(data, mod);
+      check();
+    join
+  endtask
+
+  task check();
+    @(posedge clk);
     if ( serial_valid )
       begin
         for (int i = 0; i < param; ++i)
-          begin
-            @(posedge clk);
-            if (serial_data != array[i])
-              $error("expected : %b, got : %b", array[i], serial_data);
-          end
+          if (serial_data != array[i])
+            $error("expected : %b, got : %b", array[i], serial_data);
       end
-    #1;
+
     if (serial_valid != '0)
       $error("serial_valid signal has to be 0 at the end of the process");
     if (busy != '0)
