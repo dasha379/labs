@@ -18,7 +18,7 @@ module serializer_wrapper(
   logic reg_data_val_o;
   logic reg_busy;
 
-  always @ (posedge clk_i)
+  always_ff @ (posedge clk_i)
     begin
       reg_rst        <= srst_i;
       reg_data_i     <= data_i;
