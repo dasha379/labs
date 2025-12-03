@@ -14,12 +14,15 @@ module serializer(
 
   always_comb
     begin
-      case( data_mod_i )
-        4'd0: param = 5'd16;
-        4'd1: param = 5'd0;
-        4'd2: param = 5'd0;
-        default: param = data_mod_i;
-      endcase
+      if (data_val_i)
+        begin
+          case( data_mod_i )
+            4'd0: param = 5'd16;
+            4'd1: param = 5'd0;
+            4'd2: param = 5'd0;
+            default: param = data_mod_i;
+          endcase
+        end
     end
 
   always_ff @ ( posedge clk_i )
