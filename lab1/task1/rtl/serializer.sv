@@ -33,7 +33,7 @@ module serializer(
           else
             begin
               if ( busy_o && counter < param )
-                counter <= counter + 5'b1;
+                counter <= counter + 5'b00001;
               else
                 counter <= '0;
             end
@@ -81,11 +81,11 @@ module serializer(
       else
         begin
           if ( data_val_i && param )
-            busy_o <= '1;
+            busy_o <= 1'b1;
           else
             begin
               if ( busy_o && counter < param )
-                busy_o <= '1;
+                busy_o <= 1'b1;
               else
                 busy_o <= '0;
             end
