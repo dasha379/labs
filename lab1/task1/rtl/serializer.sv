@@ -32,7 +32,7 @@ module serializer(
             counter <= 5'b1;
           else
             begin
-              if ( busy_o && counter < param )
+              if ( busy_o )
                 counter <= counter + 5'b00001;
               else
                 counter <= '0;
