@@ -14,7 +14,7 @@ module serializer(
 
   always_comb
     begin
-      if (data_val_i)
+      if ( data_val_i )
         begin
           case( data_mod_i )
             4'd0: param = 5'd16;
