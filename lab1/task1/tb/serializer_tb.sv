@@ -65,18 +65,16 @@ module serializer_tb;
     input [w_index-1:0] mod
   );
     wait(busy == '0);
-    @(posedge clk);
 
     parallel_data <= data;
     data_mod <= mod;
     parallel_valid <= 1'b1;
+
     @(posedge clk);
 
     parallel_valid <= 1'b0;
     parallel_data <= 'x;
     data_mod <= 'x;
-    array = create_array(data);
-    param = calculate_valid_bits(mod);
 
     repeat (param) @(posedge clk);
   endtask
@@ -85,6 +83,8 @@ module serializer_tb;
     input [width - 1:0]   data,
     input [w_index - 1:0] mod
   );
+    array = create_array(data);
+    param = calculate_valid_bits(mod);
     fork
       driver(data, mod);
       check();
@@ -92,18 +92,27 @@ module serializer_tb;
   endtask
 
   task check();
-    @(posedge clk);
-    if ( serial_valid )
-      begin
-        for (int i = 0; i < param; ++i)
-          if (serial_data != array[i])
-            $error("expected : %b, got : %b", array[i], serial_data);
-      end
+    automatic int bit_cnt = 0;
 
-    if (serial_valid != '0)
-      $error("serial_valid signal has to be 0 at the end of the process");
-    if (busy != '0)
-      $error("busy signal has to be 0 at the end of the process");
+    if (param)
+      begin
+        wait(serial_valid == 1'b1);
+        @(posedge clk);
+        while (serial_valid == 1'b1)
+          begin
+            if (serial_data != array[bit_cnt])
+              $error("expected %b, got %b", array[bit_cnt], serial_data);
+            bit_cnt++;
+            @(posedge clk);
+          end
+
+        if (bit_cnt != param)
+          $error("received %d bits, expected %d bits", bit_cnt, param);
+        if (serial_valid != '0)
+          $error("serial_valid signal has to be 0 at the end of the process");
+        if (busy != '0)
+          $error("busy signal has to be 0 at the end of the process");
+      end
   endtask
 
   initial
