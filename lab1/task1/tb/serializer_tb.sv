@@ -73,6 +73,8 @@ module serializer_tb;
     @(posedge clk);
 
     parallel_valid <= 1'b0;
+    parallel_data <= 'x;
+    data_mod <= 'x;
     array = create_array(data);
     param = calculate_valid_bits(mod);
 
