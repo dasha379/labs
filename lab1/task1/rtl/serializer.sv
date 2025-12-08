@@ -12,7 +12,7 @@ module serializer(
   logic [15:0] shift;
   logic [4:0]  param, counter;
 
-  always_comb
+  always_ff @ ( posedge clk_i )
     begin
       if ( data_val_i )
         begin
@@ -69,7 +69,7 @@ module serializer(
             ser_data_o <= data_i[15];
           else
             begin
-              if ( busy_o && counter < param )
+              if ( busy_o )
                 ser_data_o <= shift[14];
               else
                 ser_data_o <= '0;
