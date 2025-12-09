@@ -14,15 +14,18 @@ module serializer(
 
   always_ff @ ( posedge clk_i )
     begin
+      if (srst_i)
+        param <= 5'd0;
+      else
       if ( data_val_i )
-        begin
-          case( data_mod_i )
-            4'd0: param = 5'd16;
-            4'd1: param = 5'd0;
-            4'd2: param = 5'd0;
-            default: param = data_mod_i;
-          endcase
-        end
+          begin
+            case( data_mod_i )
+              4'd0: param <= 5'd16;
+              4'd1: param <= 5'd0;
+              4'd2: param <= 5'd0;
+              default: param <= {1'd0, data_mod_i};
+            endcase
+          end
     end
 
   always_ff @ ( posedge clk_i )
@@ -31,11 +34,11 @@ module serializer(
         counter <= '0;
       else
         begin
-          if ( data_val_i && param )
-            counter <= 5'b1;
+          if ( data_val_i && data_mod_i != 4'd1 && data_mod_i != 4'd2 )
+            counter <= 5'b00001;
           else
             begin
-              if ( busy_o )
+              if ( busy_o && counter < param )
                 counter <= counter + 5'b00001;
               else
                 counter <= '0;
@@ -49,7 +52,7 @@ module serializer(
         shift <= '0;
       else
         begin
-          if ( data_val_i && param )
+          if ( data_val_i && data_mod_i != 4'd1 && data_mod_i != 4'd2 )
             shift <= data_i;
           else
             begin
@@ -65,7 +68,7 @@ module serializer(
         ser_data_o <= '0;
       else
         begin
-          if ( data_val_i && param )
+          if ( data_val_i && data_mod_i != 4'd1 && data_mod_i != 4'd2 )
             ser_data_o <= data_i[15];
           else
             begin
@@ -83,7 +86,7 @@ module serializer(
         busy_o <= '0;
       else
         begin
-          if ( data_val_i && param )
+          if ( data_val_i && data_mod_i != 4'd1 && data_mod_i != 4'd2 )
             busy_o <= 1'b1;
           else
             begin
