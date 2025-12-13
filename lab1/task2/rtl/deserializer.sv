@@ -1,8 +1,8 @@
 module deserializer(
-  input         clk_i,
-  input         srst_i,
-  input         data_i,
-  input         data_val_i,
+  input               clk_i,
+  input               srst_i,
+  input               data_i,
+  input               data_val_i,
   output logic [15:0] deser_data_o,
   output logic        deser_data_val_o
 );

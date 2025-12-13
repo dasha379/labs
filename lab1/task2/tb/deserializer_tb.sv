@@ -63,7 +63,6 @@ module deserializer_tb;
   task check();
     if ( deser_data_val_o )
       begin
-
         if ( flag < width )
           $error("%0t received less bits : %d", $time(), counter);
         else
