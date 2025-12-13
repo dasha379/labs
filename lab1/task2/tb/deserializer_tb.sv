@@ -32,6 +32,21 @@ module deserializer_tb;
   int                     flag;
   logic [width - 1 : 0]   queue;
 
+  typedef struct {
+    logic data;
+    logic valid;
+  } packet;
+
+  mailbox#(packet) m = new();
+
+  task monitor;
+    packet pkt;
+    @(posedge clk_i);
+    pkt.data = data_i;
+    pkt.valid = data_val_i;
+    m.put(pkt);
+  endtask
+
   task driver();
     @(posedge clk_i);
 
@@ -41,12 +56,14 @@ module deserializer_tb;
   endtask
 
   task gen_array();
+    packet pkt;
     @(posedge clk_i);
-    if ( data_val_i )
+    m.get(pkt);
+    if ( pkt.valid )
       begin
         if (counter <= 4'd15)
           begin
-            queue[width - 1 - counter] <= data_i;
+            queue[width - 1 - counter] <= pkt.data;
             counter <= counter + 1'b1;
             flag <= counter + 1;
             //$strobe($time(), queue[width - 1 - counter], width - 1 - counter);
@@ -69,7 +86,7 @@ module deserializer_tb;
           begin
             for (int i = 0; i < width; ++i)
               begin
-                deser_data_expected[i] = queue[i];
+                deser_data_expected[i] <= queue[i];
               end
             if ( deser_data_o != deser_data_expected )
               $error("%0t expected %b, got %b", $time(), deser_data_expected, deser_data_o);
