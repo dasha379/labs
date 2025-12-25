@@ -16,10 +16,10 @@ module deserializer(
       else
         begin
           if ( data_val_i )
-            if ( counter <= 4'd15 )
-              counter <= counter + 1'd1;
+            if ( counter == 4'd15 )
+              counter <= '0;
             else
-              counter <= 4'd0;
+              counter <= counter + 1'd1;
         end
     end
 
@@ -29,8 +29,7 @@ module deserializer(
         deser_data_o <= '0;
       else
         if ( data_val_i )
-          if (counter <= 4'd15)
-            deser_data_o[15 - counter] <= data_i;
+          deser_data_o[15 - counter] <= data_i;
     end
 
   always_ff @ ( posedge clk_i )
