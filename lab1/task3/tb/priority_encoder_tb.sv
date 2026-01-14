@@ -1,15 +1,29 @@
 `timescale 1ns/1ps
 
-module priority_encoder_tb #(parameter width = 8);
+module priority_encoder_tb #(
+  parameter WIDTH = 8
+);
   logic                 clk_i;
   logic                 srst_i;
-  logic [width - 1 : 0] data_i;
+  logic [WIDTH - 1 : 0] data_i;
   logic                 data_val_i;
-  logic [width - 1 : 0] data_left_o;
-  logic [width - 1 : 0] data_right_o;
+  logic [WIDTH - 1 : 0] data_left_o;
+  logic [WIDTH - 1 : 0] data_right_o;
   logic                 data_val_o;
 
-  priority_encoder #(.width(width)) DUT (.*);
+  priority_encoder #(
+    .WIDTH       ( WIDTH        )
+  ) DUT (
+    .clk_i       ( clk_i        ),
+    .srst_i      ( srst_i       ),
+
+    .data_i      ( data_i       ),
+    .data_val_i  ( data_val_i   ),
+
+    .data_left_o ( data_left_o  ),
+    .data_right_o( data_right_o ),
+    .data_val_o  ( data_val_o   )
+  );
 
   initial
     begin
@@ -26,8 +40,9 @@ module priority_encoder_tb #(parameter width = 8);
   endtask
 
   typedef struct {
-    logic [width - 1:0] l;
-    logic [width - 1:0] r;
+    logic [WIDTH - 1:0] l;
+    logic [WIDTH - 1:0] r;
+    logic               valid;
   } packet;
 
   mailbox#(packet) in_mbx = new();
@@ -37,25 +52,28 @@ module priority_encoder_tb #(parameter width = 8);
 
     @( posedge clk_i );
 
-    data_i     <= width'($urandom());
+    data_i     <= WIDTH'($urandom_range(100));
     data_val_i <= 1'($urandom());
 
     @( posedge clk_i );
     
-    p.l = left(data_i, data_val_i);
-    p.r = right(data_i, data_val_i);
+    p.l     = left(data_i, data_val_i);
+    p.r     = right(data_i, data_val_i);
+    p.valid = data_val_i;
     in_mbx.put(p);
     if (data_val_i)
       $strobe("data = %b", data_i);
+    else
+      data_i <= 'x;
   endtask
 
-  function automatic logic [width - 1 : 0] left(
-    input logic [width - 1 : 0] data,
+  function automatic logic [WIDTH - 1 : 0] left(
+    input logic [WIDTH - 1 : 0] data,
     input logic valid
   );
-    logic [width - 1 : 0] left_;
+    logic [WIDTH - 1 : 0] left_;
     left_ = '0;
-    for (int i = width - 1; i >= 0; i--)
+    for (int i = WIDTH - 1; i >= 0; i--)
       begin
         if ( valid )
           begin
@@ -69,13 +87,13 @@ module priority_encoder_tb #(parameter width = 8);
     return left_;
   endfunction
 
-  function automatic logic [width - 1 : 0] right(
-    input logic [width - 1 : 0] data,
+  function automatic logic [WIDTH - 1 : 0] right(
+    input logic [WIDTH - 1 : 0] data,
     input logic valid
   );
-    logic [width - 1 : 0] right_;
+    logic [WIDTH - 1 : 0] right_;
     right_ = '0;
-    for (int i = 0; i < width; i++)
+    for (int i = 0; i < WIDTH; i++)
       begin
         if ( valid )
           begin
@@ -89,22 +107,42 @@ module priority_encoder_tb #(parameter width = 8);
     return right_;
   endfunction
 
+  int success_count = 0;
+
   task check();
     packet in_p;
     in_mbx.get(in_p);
 
     @( posedge clk_i );
 
+    if ( data_val_o != in_p.valid )
+      begin
+        $error("valid signal does not work correctly");
+        $stop();
+      end
+
     if ( data_val_o )
       begin
         if (data_left_o != in_p.l)
-          $error("LEFT: expected - %b, got - %b", in_p.l, data_left_o);
+          begin
+            $error("LEFT: expected - %b, got - %b", in_p.l, data_left_o);
+            $stop();
+          end
         else
-          $display("PASSED left = %b", data_left_o);
+          begin
+            success_count += 1;
+            $display("PASSED left = %b", data_left_o);
+          end
         if (data_right_o != in_p.r)
-          $error("RIGHT: expected - %b, got - %b", in_p.r, data_right_o);
+          begin
+            $error("RIGHT: expected - %b, got - %b", in_p.r, data_right_o);
+            $stop();
+          end
         else
-          $display("PASSED right = %b", data_right_o);
+          begin
+            success_count += 1;
+            $display("PASSED right = %b", data_right_o);
+          end
       end
   endtask
 
@@ -128,12 +166,15 @@ module priority_encoder_tb #(parameter width = 8);
       reset();
       repeat (5) test();
 
+      $display("simulation is complete. passed %d tests", success_count);
+
       $finish;
     end
 
   initial
     begin
       repeat (10000) @ (posedge clk_i);
+      $display("timeout occured");
       $stop();
     end
 endmodule
