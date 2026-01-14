@@ -52,7 +52,7 @@ module priority_encoder_tb #(
 
     @( posedge clk_i );
 
-    data_i     <= WIDTH'($urandom_range(100));
+    data_i     <= WIDTH'($urandom);
     data_val_i <= 1'($urandom());
 
     @( posedge clk_i );
@@ -107,7 +107,7 @@ module priority_encoder_tb #(
     return right_;
   endfunction
 
-  int success_count = 0;
+  int success_count;
 
   task check();
     packet in_p;
