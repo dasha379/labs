@@ -52,7 +52,7 @@ module priority_encoder_tb #(
 
     @( posedge clk_i );
 
-    data_i     <= WIDTH'($urandom);
+    data_i     <= WIDTH'($urandom());
     data_val_i <= 1'($urandom());
 
     @( posedge clk_i );
