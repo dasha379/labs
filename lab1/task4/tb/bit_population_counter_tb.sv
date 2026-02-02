@@ -66,23 +66,30 @@ module bit_population_counter_tb;
     packet in_p;
     in_mbx.get(in_p);
 
-    @(posedge clk_i);
-
-    if (data_val_o != in_p.valid)
+    if ( in_p.valid )
       begin
-        $error("incorrect valid signal - expected : %b, got : %b", in_p.valid, data_val_o);
-        $stop();
-      end
 
-    if (data_val_o)
-      begin
-        if (data_o != in_p.cnt)
+        wait( data_val_o );
+        
+        @( posedge clk_i );
+
+        if ( data_o != in_p.cnt )
           begin
             $error("expected : %d, got : %d", in_p.cnt, data_o);
             $stop();
           end
         else
           success_count += 1;
+
+      end
+    else
+      begin
+        @( posedge clk_i );
+        if ( data_val_o != '0 )
+          begin
+            $error("valid signal works incorrect. expected: 0, got: 1");
+            $stop();
+          end
       end
   endtask
 

@@ -21,7 +21,7 @@ module debouncer #(
 
   always_ff @ (posedge clk_i)
     begin
-      if ( ~key1 && count + 1 < CNT )
+      if ( ( ~key1 ) && ( count + 1 < CNT ) )
         count <= count + 1'b1;
       else if ( key1 )
         count <= '0;
@@ -29,19 +29,17 @@ module debouncer #(
 
   always_ff @ (posedge clk_i)
     begin
-      if ( ~key1 && count + 1 == CNT )
+      if ( ( ~key1 ) && ( count + 1 == CNT ) )
         state <= 1'b1;
       else
         state <= '0;
     end
 
-  always_ff @ (posedge clk_i)
-    begin
-      if ( ~state && (count + 1 == CNT) && ~key1 )
-        key_pressed_stb_o <= 1'b1;
-      else
-        key_pressed_stb_o <= '0;
-    end
+  logic delayed_state;
 
+  always_ff @ (posedge clk_i)
+    delayed_state <= state;
+
+  assign key_pressed_stb_o = state && !delayed_state;
 
 endmodule
