@@ -35,19 +35,17 @@ module traffic_lights #(
   logic [31:0] yellow_ticks;
   logic [31:0] red_ticks;
 
-  always_ff @ ( posedge clk_i )
-    if ( srst_i )
-      begin
-        green_ticks  <= 32'd2;
-        yellow_ticks <= 32'd2;
-        red_ticks    <= 32'd2;
-      end
-    else if ( cmd_valid_i )
-      case( cmd_type_i )
-        3'd3: green_ticks  <= cmd_data_i * 2;
-        3'd4: red_ticks    <= cmd_data_i * 2;
-        3'd5: yellow_ticks <= cmd_data_i * 2;
-      endcase
+  always_ff @ (posedge clk_i)
+    if ( srst_i ) green_ticks <= '0;
+    else if ( cmd_type_i == 3'd3 ) green_ticks <= cmd_data_i * 2;
+
+  always_ff @ (posedge clk_i)
+    if ( srst_i ) red_ticks <= '0;
+    else if ( cmd_type_i == 3'd4 ) red_ticks <= cmd_data_i * 2;
+  
+  always_ff @ (posedge clk_i)
+    if ( srst_i ) yellow_ticks <= '0;
+    else if ( cmd_type_i == 3'd5 ) yellow_ticks <= cmd_data_i * 2;
 
   logic [31:0] blink_cnt;
   logic [31:0] state_timer;
@@ -96,25 +94,26 @@ module traffic_lights #(
     if ( srst_i ) state <= RED_S;
     else if ( perehod ) state <= next;
 
-  always_comb begin
-    next = state;
-    if ( cmd_valid_i )
-      case( cmd_type_i )
-        3'd0:    next = RED_S;
-        3'd1:    next = OFF_S;
-        3'd2:    next = NOTRANSITION_S;
-        default: next = state;
-      endcase
-    else
-      case( state )
-        RED_S:         next = RED_YELLOW_S;
-        RED_YELLOW_S:  next = GREEN_S;
-        GREEN_S:       next = GREEN_BLINK_S;
-        GREEN_BLINK_S: next = YELLOW_S;
-        YELLOW_S:      next = RED_S;
-        default:       next = state;
-      endcase
-  end
+  always_comb
+    begin
+      next = state;
+      if ( cmd_valid_i )
+        case( cmd_type_i )
+          3'd0:    next = RED_S;
+          3'd1:    next = OFF_S;
+          3'd2:    next = NOTRANSITION_S;
+          default: next = state;
+        endcase
+      else
+        case( state )
+          RED_S:         next = RED_YELLOW_S;
+          RED_YELLOW_S:  next = GREEN_S;
+          GREEN_S:       next = GREEN_BLINK_S;
+          GREEN_BLINK_S: next = YELLOW_S;
+          YELLOW_S:      next = RED_S;
+          default:       next = state;
+        endcase
+    end
 
   always_ff @ ( posedge clk_i )
     if ( srst_i ) red_o <= '0;
