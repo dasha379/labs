@@ -37,15 +37,15 @@ module traffic_lights #(
 
   always_ff @ (posedge clk_i)
     if ( srst_i ) green_ticks <= '0;
-    else if ( cmd_type_i == 3'd3 ) green_ticks <= cmd_data_i * 2;
+    else if ( cmd_valid_i && cmd_type_i == 3'd3 ) green_ticks <= cmd_data_i * 2;
 
   always_ff @ (posedge clk_i)
     if ( srst_i ) red_ticks <= '0;
-    else if ( cmd_type_i == 3'd4 ) red_ticks <= cmd_data_i * 2;
+    else if ( cmd_valid_i && cmd_type_i == 3'd4 ) red_ticks <= cmd_data_i * 2;
   
   always_ff @ (posedge clk_i)
     if ( srst_i ) yellow_ticks <= '0;
-    else if ( cmd_type_i == 3'd5 ) yellow_ticks <= cmd_data_i * 2;
+    else if ( cmd_valid_i && cmd_type_i == 3'd5 ) yellow_ticks <= cmd_data_i * 2;
 
   logic [31:0] blink_cnt;
   logic [31:0] state_timer;
@@ -122,11 +122,11 @@ module traffic_lights #(
 
   always_ff @ ( posedge clk_i )
     if ( srst_i ) yellow_o <= '0;
-    else if (cmd_type_i != 3'd1) yellow_o <= ( state == YELLOW_S || state == RED_YELLOW_S || state == NOTRANSITION_S && stable );
+    else if (cmd_type_i != 3'd1) yellow_o <= (( state == YELLOW_S ) || ( state == RED_YELLOW_S ) || ( state == NOTRANSITION_S && stable ));
     else yellow_o <= '0;
 
   always_ff @ ( posedge clk_i )
     if ( srst_i ) green_o <= '0;
-    else if (cmd_type_i != 3'd1) green_o <= ( state == GREEN_S || state == GREEN_BLINK_S && stable );
+    else if (cmd_type_i != 3'd1) green_o <= ( state == GREEN_S ) || ( state == GREEN_BLINK_S && stable );
     else green_o <= '0;
 endmodule
