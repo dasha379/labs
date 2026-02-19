@@ -97,6 +97,7 @@ module traffic_lights #(
     else blink_cnt <= '0;
 
   logic stable;
+<<<<<<< HEAD
 
   always_ff @ (posedge clk_i)
     if (srst_i) stable <= '0;
@@ -150,4 +151,56 @@ module traffic_lights #(
   assign yellow_o = (state == YELLOW_S || state == RED_YELLOW_S || ( state == NOTRANSITION_S && stable ));
   assign green_o = (state == GREEN_S || ( state == GREEN_BLINK_S && stable ));
 
+=======
+
+  always_ff @ (posedge clk_i)
+    if (srst_i) stable <= '0;
+    else if (state == GREEN_BLINK_S || state == NOTRANSITION_S) stable <= (blink_cnt < BLINK_HALF_PERIOD_TICKS);
+    else stable <= '0;
+
+   always_ff @ ( posedge clk_i )
+    if (srst_i) begin
+      red_expired         <= '0;
+      red_yellow_expired  <= '0;
+      green_expired       <= '0;
+      green_blink_expired <= '0;
+      yellow_expired      <= '0;
+    end else begin
+      red_expired         <= (state == RED_S)         && (red_ticks_cnt    == red_ticks - 1);
+      red_yellow_expired  <= (state == RED_YELLOW_S)  && (red_yellow_cnt   == RED_YELLOW_TICKS - 1);
+      green_expired       <= (state == GREEN_S)       && (green_ticks_cnt  == green_ticks - 1);
+      green_blink_expired <= (state == GREEN_BLINK_S) && (green_blink_cnt  == BLINK_GREEN_TICKS - 1);
+      yellow_expired      <= (state == YELLOW_S)      && (yellow_ticks_cnt == yellow_ticks - 1);
+    end
+
+  always_ff @ ( posedge clk_i )
+    if ( srst_i ) state <= RED_S;
+    else state <= next_state;
+
+  always_comb
+    begin
+      next_state = state;
+      if ( cmd_valid_i )
+        case( cmd_type_i )
+          3'd0:    if ( state == OFF_S || state == NOTRANSITION_S ) next_state = RED_S;
+          3'd1:    next_state = OFF_S;
+          3'd2:    next_state = NOTRANSITION_S;
+          default: next_state = state;
+        endcase
+      else
+        case( state )
+          RED_S:         if (red_expired)         next_state = RED_YELLOW_S;
+          RED_YELLOW_S:  if (red_yellow_expired)  next_state = GREEN_S;
+          GREEN_S:       if (green_expired)       next_state = GREEN_BLINK_S;
+          GREEN_BLINK_S: if (green_blink_expired) next_state = YELLOW_S;
+          YELLOW_S:      if (yellow_expired)      next_state = RED_S;
+          default:                                next_state = state;
+        endcase
+    end
+
+  assign red_o = (state == RED_S || state == RED_YELLOW_S);
+  assign yellow_o = (state == YELLOW_S || state == RED_YELLOW_S || ( state == NOTRANSITION_S && stable ));
+  assign green_o = (state == GREEN_S || ( state == GREEN_BLINK_S && stable ));
+
+>>>>>>> refs/remotes/origin/main
 endmodule
