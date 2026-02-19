@@ -1,9 +1,9 @@
 `timescale 1ns/1ps
 
 module traffic_lights_tb;
-  parameter BLINK_HALF_PERIOD_MS = 900;
-  parameter BLINK_GREEN_TIME_TICK = 5;
-  parameter RED_YELLOW_MS = 500;
+  parameter BLINK_HALF_PERIOD_MS = 40;
+  parameter BLINK_GREEN_TIME_TICK = 6;
+  parameter RED_YELLOW_MS = 50;
 
   logic        clk_i;
   logic        srst_i;
@@ -45,7 +45,7 @@ module traffic_lights_tb;
   task reset();
     srst_i <= 1'b1;
     repeat(2) @ ( posedge clk_i );
-    if ( red_o != '0 || yellow_o != '0 || green_o != '0 )
+    if ( red_o != '1 || yellow_o != '0 || green_o != '0 )
       begin
         $error("reset failed :(");
         $stop();
@@ -61,9 +61,9 @@ module traffic_lights_tb;
     @ ( posedge clk_i );
   endtask
 
-  int red_ticks;
-  int yellow_ticks;
-  int green_ticks;
+  int red_ticks = 100;
+  int yellow_ticks = 100;
+  int green_ticks = 100;
 
   task automatic set_time_for_red( input logic [15:0] data );
     cmd_data_i <= data;
@@ -85,7 +85,8 @@ module traffic_lights_tb;
 
   task automatic check_blinking();
     logic prev;
-    repeat (BLINK_GREEN_TIME_TICK * 2)
+
+    repeat ( BLINK_GREEN_TIME_TICK * 2 )
       begin
         prev = green_o;
         wait_ticks( BLINK_HALF_PERIOD_TICKS );
@@ -104,7 +105,7 @@ module traffic_lights_tb;
     repeat (n)
       begin
         prev = yellow_o;
-        wait_ticks( BLINK_HALF_PERIOD_TICKS + 1 );
+        wait_ticks( BLINK_HALF_PERIOD_TICKS );
         if (yellow_o == prev)
           begin
             $error("yellow has to blink in NOTRANSITION_S");
@@ -162,20 +163,22 @@ module traffic_lights_tb;
     cmd_type_set( 3'd0 );
     repeat (n)
       begin
-        @ (posedge clk_i);
         check_colours('1, '0, '0);
 
-        wait_ticks( red_ticks );
+        wait_ticks( red_ticks + 1 );
+        
         check_colours('1, '1, '0);
 
-        wait_ticks( RED_YELLOW_TICKS );
+        wait_ticks( RED_YELLOW_TICKS + 1 );
         check_colours('0, '0, '1);
 
-        wait_ticks( green_ticks );
+        wait_ticks( green_ticks + 1 );
         check_blinking();
+        @(posedge clk_i);
 
         check_colours('0, '1, '0);
-        wait_ticks( yellow_ticks );
+        wait_ticks( yellow_ticks + 1 );
+
       end
   endtask
 
@@ -188,7 +191,6 @@ module traffic_lights_tb;
       reset();
       @ ( posedge clk_i );
 
-      
       check_turn_off();
       $display("turn_off_test passed");
       set();
