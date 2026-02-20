@@ -19,6 +19,7 @@ module traffic_lights #(
   localparam BLINK_PERIOD_TICKS = BLINK_HALF_PERIOD_TICKS * 2;
   localparam BLINK_GREEN_TICKS = 2 * BLINK_HALF_PERIOD_TICKS * BLINK_GREEN_TIME_TICK;
   localparam RED_YELLOW_TICKS = RED_YELLOW_MS * 2;
+  localparam default_time = 100;
 
   typedef enum logic [2:0] {
     OFF_S,
@@ -42,50 +43,66 @@ module traffic_lights #(
   logic red_expired, green_expired, yellow_expired, red_yellow_expired, green_blink_expired;
 
   always_ff @ (posedge clk_i)
-    if ( srst_i ) green_ticks <= 32'd100;
-    else if ( cmd_valid_i && cmd_type_i == 3'd3 ) green_ticks <= cmd_data_i * 2;
+    if ( srst_i )
+      green_ticks <= default_time;
+    else if ( cmd_valid_i && cmd_type_i == 3'd3 )
+      green_ticks <= cmd_data_i * 2;
   
   always_ff @ (posedge clk_i)
-    if ( srst_i ) green_ticks_cnt <= '0;
+    if ( srst_i )
+      green_ticks_cnt <= '0;
     else if ( state == GREEN_S )
       green_ticks_cnt <= green_ticks_cnt + 1'b1;
-    else green_ticks_cnt <= '0;
+    else
+      green_ticks_cnt <= '0;
 
   always_ff @ (posedge clk_i)
-    if ( srst_i ) red_ticks <= 32'd100;
-    else if ( cmd_valid_i && cmd_type_i == 3'd4 ) red_ticks <= cmd_data_i * 2;
+    if ( srst_i )
+      red_ticks <= default_time;
+    else if ( cmd_valid_i && cmd_type_i == 3'd4 )
+      red_ticks <= cmd_data_i * 2;
 
   always_ff @ (posedge clk_i)
-    if ( srst_i ) red_ticks_cnt <= '0;
+    if ( srst_i )
+      red_ticks_cnt <= '0;
     else if ( state == RED_S )
       red_ticks_cnt <= red_ticks_cnt + 1'b1;
-    else red_ticks_cnt <= '0;
+    else
+      red_ticks_cnt <= '0;
   
   always_ff @ (posedge clk_i)
-    if ( srst_i ) yellow_ticks <= 32'd100;
-    else if ( cmd_valid_i && cmd_type_i == 3'd5 ) yellow_ticks <= cmd_data_i * 2;
+    if ( srst_i )
+      yellow_ticks <= default_time;
+    else if ( cmd_valid_i && cmd_type_i == 3'd5 )
+      yellow_ticks <= cmd_data_i * 2;
   
   always_ff @ (posedge clk_i)
-    if ( srst_i ) yellow_ticks_cnt <= '0;
+    if ( srst_i )
+      yellow_ticks_cnt <= '0;
     else if ( state == YELLOW_S )
       yellow_ticks_cnt <= yellow_ticks_cnt + 1'b1;
-    else yellow_ticks_cnt <= '0;
+    else
+      yellow_ticks_cnt <= '0;
 
   logic [31:0] red_yellow_cnt;
 
   always_ff @ (posedge clk_i)
-    if ( srst_i ) red_yellow_cnt <= '0;
+    if ( srst_i )
+      red_yellow_cnt <= '0;
     else if ( state == RED_YELLOW_S )
       red_yellow_cnt <= red_yellow_cnt + 1'b1;
-    else red_yellow_cnt <= '0;
+    else
+      red_yellow_cnt <= '0;
 
   logic [31:0] green_blink_cnt;
 
   always_ff @ (posedge clk_i)
-    if ( srst_i ) green_blink_cnt <= '0;
+    if ( srst_i )
+      green_blink_cnt <= '0;
     else if ( state == GREEN_BLINK_S )
       green_blink_cnt <= green_blink_cnt + 1'b1;
-    else green_blink_cnt <= '0;
+    else
+      green_blink_cnt <= '0;
 
   logic [31:0] blink_cnt;
 
@@ -94,14 +111,18 @@ module traffic_lights #(
       blink_cnt <= '0;
     else if (( state == GREEN_BLINK_S || state == NOTRANSITION_S ) && blink_cnt < BLINK_PERIOD_TICKS - 1 )
       blink_cnt <= blink_cnt + 32'd1;
-    else blink_cnt <= '0;
+    else
+      blink_cnt <= '0;
 
   logic stable;
 
   always_ff @ (posedge clk_i)
-    if (srst_i) stable <= '0;
-    else if (state == GREEN_BLINK_S || state == NOTRANSITION_S) stable <= (blink_cnt < BLINK_HALF_PERIOD_TICKS);
-    else stable <= '0;
+    if (srst_i)
+      stable <= '0;
+    else if (state == GREEN_BLINK_S || state == NOTRANSITION_S)
+      stable <= (blink_cnt < BLINK_HALF_PERIOD_TICKS);
+    else
+      stable <= '0;
 
    always_ff @ ( posedge clk_i )
     if (srst_i)
@@ -122,8 +143,10 @@ module traffic_lights #(
       end
 
   always_ff @ ( posedge clk_i )
-    if ( srst_i ) state <= RED_S;
-    else state <= next_state;
+    if ( srst_i )
+      state <= RED_S;
+    else
+      state <= next_state;
 
   always_comb
     begin
