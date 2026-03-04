@@ -98,35 +98,40 @@ module fifo_tb;
 
   task automatic generate_data();
     data_i <= DWIDTH'($urandom());
-    @(posedge clk_i);
   endtask
 
   task automatic push_test(int num_tests);
-    for (int i = 0; i < num_tests; ++i)
-      if (!golden_full_o)
-        begin
-          wrreq_i <= '1;
-          rdreq_i <= '0;
-          generate_data();
-          @(posedge clk_i);
-          check();
-        end
+    repeat (num_tests)
+      begin
+        @(posedge clk_i);
+        if (!golden_full_o)
+          begin
+            wrreq_i <= '1;
+            rdreq_i <= '0;
+            generate_data();
+            check();
+          end
+      end
   endtask
 
   task automatic pop_test(int num_tests);
-    for (int i = 0; i < num_tests; ++i)
-      if (!golden_empty_o)
-        begin
-          wrreq_i <= '0;
-          rdreq_i <= '1;
-          generate_data();
-          check();
-        end
+    repeat (num_tests)
+      begin
+        @(posedge clk_i);
+        if (!golden_empty_o)
+          begin
+            wrreq_i <= '0;
+            rdreq_i <= '1;
+            generate_data();
+            check();
+          end
+      end
   endtask
 
   task automatic mixed_test(int num_tests);
-    for (int i = 0; i < num_tests; ++i)
+    repeat (num_tests)
       begin
+        @(posedge clk_i);
         if (!golden_empty_o && !golden_full_o)
           begin
             wrreq_i <= 1'($urandom());
@@ -153,20 +158,19 @@ module fifo_tb;
 
   task automatic check();
     int err;
-    @(posedge clk_i);
 
     err = 0;
 
     if (q_o !== golden_q_o && rdreq_i)
       begin
         $error("read data expected: %d, got: %d", golden_q_o, q_o);
-        $stop();
+        //$stop();
         err = 1;
       end
     if (empty_o !== golden_empty_o)
       begin
         $error("empty signal expected: %d, got: %d", golden_empty_o, empty_o);
-        $stop();
+        //$stop();
         err = 1;
       end
     if (full_o !== golden_full_o)
