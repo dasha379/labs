@@ -25,18 +25,9 @@ module fifo #(
   logic [AWIDTH : 0] cnt;
   logic [AWIDTH - 1 : 0] wr_ptr, rd_ptr;
   logic wr_en, rd_en;
-  logic out_valid;
-
-  always_ff @ (posedge clk_i)
-    if (srst_i)
-      out_valid <= '0;
-    else if (wr_en && cnt == '0)
-      out_valid <= '1;
-    else if (rd_en && cnt == 1'd1)
-      out_valid <= '0;
 
   assign wr_en = wrreq_i && !full_o;
-  assign rd_en = rdreq_i && !empty_o && out_valid;
+  assign rd_en = rdreq_i && !empty_o;
 
   always_ff @ ( posedge clk_i )
     if ( srst_i )
@@ -83,13 +74,13 @@ module fifo #(
   always_ff @ (posedge clk_i)
     if ( srst_i )
       cnt <= '0;
-    else if ( wrreq_i && ~rdreq_i && cnt < DEPTH)
+    else if ( wr_en && ~rd_en )
       cnt <= cnt + 1'b1;
-    else if ( ~wrreq_i && rdreq_i && cnt > '0)
+    else if ( ~wr_en && rd_en )
       cnt <= cnt - 1'b1;
 
   assign full_o = cnt == DEPTH;
-  assign empty_o = !out_valid;
+  assign empty_o = cnt == '0;
   assign usedw_o = cnt[AWIDTH-1:0];
   assign almost_empty_o = (cnt < ALMOST_EMPTY_VALUE);
   assign almost_full_o = (cnt >= ALMOST_FULL_VALUE);

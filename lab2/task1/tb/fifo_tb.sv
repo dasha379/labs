@@ -4,7 +4,7 @@ module fifo_tb;
   parameter DWIDTH = 16;
   parameter AWIDTH = 4;
   parameter SHOWAHEAD = 1;
-  parameter ALMOST_FULL_VALUE = 1 << AWIDTH - 4;
+  parameter ALMOST_FULL_VALUE = (1 << AWIDTH) - 4;
   parameter ALMOST_EMPTY_VALUE = 4;
   parameter REGISTER_OUTPUT = 0;
 
@@ -176,7 +176,7 @@ module fifo_tb;
     if (full_o !== golden_full_o)
       begin
         $error("full signal expected: %d, got: %d", golden_full_o, full_o);
-        $stop();
+        //$stop();
         err = 1;
       end
     if (usedw_o !== golden_usedw_o)
