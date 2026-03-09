@@ -14,12 +14,12 @@ module mixed_width_ram
 	input we,
 	input re,
 	input clk,
-	input [$clog2((RW < WW) ? WORDS : (WORDS * RW)/WW) - 1 : 0] waddr, 
-	input [WW-1:0] wdata, 
-	input [$clog2((RW < WW) ? (WORDS * WW)/RW : WORDS) - 1 : 0] raddr, 
+	input [$clog2((RW < WW) ? WORDS : (WORDS * RW)/WW) - 1 : 0] waddr,
+	input [WW-1:0] wdata,
+	input [$clog2((RW < WW) ? (WORDS * WW)/RW : WORDS) - 1 : 0] raddr,
 	output logic [RW-1:0] q
 );
-   
+
 	// Use a multi-dimensional packed array to model the different read/write
 	// width
 	localparam int R = (RW < WW) ? WW/RW : RW/WW;
@@ -31,18 +31,20 @@ module mixed_width_ram
 		// Smaller read?
 		always_ff@(posedge clk)
 		begin
-			if(we) ram[waddr] <= wdata;
-      if (re)
-			q <= ram[raddr / R][raddr % R];
+			if(we)
+				ram[waddr] <= wdata;
+			if (re)
+				q <= ram[raddr / R][raddr % R];
 		end
 	end
 	else begin 
 		// Smaller write?
 		always_ff@(posedge clk)
 		begin
-			if(we) ram[waddr / R][waddr % R] <= wdata;
-      if (re)
-			q <= ram[raddr];
+			if(we)
+				ram[waddr / R][waddr % R] <= wdata;
+			if (re)
+				q <= ram[raddr];
 		end
 	end 
 	endgenerate
