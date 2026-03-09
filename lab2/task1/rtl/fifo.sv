@@ -24,10 +24,33 @@ module fifo #(
 
   logic [AWIDTH : 0] cnt;
   logic [AWIDTH - 1 : 0] wr_ptr, rd_ptr;
-  logic wr_en, rd_en;
+  logic wr_en, rd_en, valid;
+  logic fifo_not_empty, need_data;
+  logic last, pre_empty;
+
+  always_ff @ (posedge clk_i)
+    if (srst_i)
+      fifo_not_empty <= '0;
+    else if (cnt > AWIDTH'(1) || wr_en)
+      fifo_not_empty <= '1;
+    else if (pre_empty)
+      fifo_not_empty <= '0;
+    
+  assign need_data = fifo_not_empty && !valid;
+
+  always_ff @ (posedge clk_i)
+    if (srst_i)
+      valid <= '0;
+    else if (pre_empty)
+      valid <= '0;
+    else if (fifo_not_empty)
+      valid <= '1;
+
+  assign last = valid && cnt == AWIDTH'(1);
+  assign pre_empty = last && rdreq_i;
 
   assign wr_en = wrreq_i && !full_o;
-  assign rd_en = rdreq_i && !empty_o;
+  assign rd_en = rdreq_i && valid && !last || need_data;
 
   always_ff @ ( posedge clk_i )
     if ( srst_i )
@@ -41,47 +64,39 @@ module fifo #(
     else if ( rd_en )
       rd_ptr <= rd_ptr + 1'b1;
 
-  logic [DWIDTH - 1 : 0] data [0 : DEPTH - 1];
-  always_ff @ (posedge clk_i)
-    if ( wr_en )
-      data[wr_ptr] <= data_i;
+  mixed_width_ram #(
+      .WORDS ( DEPTH ),
+      .RW    ( DWIDTH ),
+      .WW    ( DWIDTH )
+  ) memory (
+      .clk   ( clk_i ),
 
-  logic [DWIDTH - 1 : 0] q_o1;
-  generate
-    if ( SHOWAHEAD )
-        assign q_o1 = data[rd_ptr];
-    else
-      begin
-        always_ff @ ( posedge clk_i )
-          if ( srst_i )
-            q_o1 <= '0;
-          else if (rd_en)
-            q_o1 <= data[rd_ptr];
-      end
-  endgenerate
+      .we    ( wr_en ),
+      .waddr ( wr_ptr ),
+      .wdata ( data_i ),
 
-  generate
-    if ( REGISTER_OUTPUT )
-      always_ff @ ( posedge clk_i )
-        if ( srst_i )
-          q_o <= '0;
-        else
-          q_o <= q_o1;
-    else
-      assign q_o = q_o1;
-  endgenerate
+      .re    ( rd_en ),
+      .raddr ( rd_ptr ),
+      .q     ( q_o )
+  );
 
   always_ff @ (posedge clk_i)
     if ( srst_i )
       cnt <= '0;
-    else if ( wr_en && ~rd_en )
-      cnt <= cnt + 1'b1;
-    else if ( ~wr_en && rd_en )
-      cnt <= cnt - 1'b1;
+    else if ( pre_empty )
+      cnt <= wr_en;
+    else if ( valid )
+      case({wr_en, rd_en})
+        2'b10: cnt <= cnt + AWIDTH'(1);
+        2'b01: cnt <= cnt - AWIDTH'(1);
+        default: cnt <= cnt;
+      endcase
+    else
+      cnt <= cnt + wr_en;
 
   assign full_o = cnt == DEPTH;
-  assign empty_o = cnt == '0;
+  assign empty_o = !valid;
   assign usedw_o = cnt[AWIDTH-1:0];
-  assign almost_empty_o = (cnt < ALMOST_EMPTY_VALUE);
+  assign almost_empty_o = (cnt < ALMOST_EMPTY_VALUE); 
   assign almost_full_o = (cnt >= ALMOST_FULL_VALUE);
 endmodule

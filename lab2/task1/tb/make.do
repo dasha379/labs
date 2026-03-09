@@ -1,5 +1,6 @@
 vlib work
 
+vlog -sv ../rtl/mixed_width_ram.sv
 vlog -sv ../rtl/fifo.sv
 vlog -sv ../rtl/fifo_wrapper.sv
 

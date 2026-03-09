@@ -104,10 +104,11 @@ module fifo_tb;
     repeat (num_tests)
       begin
         @(posedge clk_i);
+        wrreq_i <= '0;
+        rdreq_i <= '0;
         if (!golden_full_o)
           begin
             wrreq_i <= '1;
-            rdreq_i <= '0;
             generate_data();
             check();
           end
@@ -118,9 +119,10 @@ module fifo_tb;
     repeat (num_tests)
       begin
         @(posedge clk_i);
+        rdreq_i <= '0;
+        wrreq_i <= '0;
         if (!golden_empty_o)
           begin
-            wrreq_i <= '0;
             rdreq_i <= '1;
             generate_data();
             check();
@@ -132,6 +134,8 @@ module fifo_tb;
     repeat (num_tests)
       begin
         @(posedge clk_i);
+        rdreq_i <= '0;
+        wrreq_i <= '0;
         if (!golden_empty_o && !golden_full_o)
           begin
             wrreq_i <= 1'($urandom());
@@ -141,12 +145,10 @@ module fifo_tb;
         else if (golden_empty_o && !golden_full_o)
           begin
             wrreq_i <= 1'($urandom());
-            rdreq_i <= '0;
             generate_data();
           end
         else if (!golden_empty_o && golden_full_o)
           begin
-            wrreq_i <= '0;
             rdreq_i <= 1'($urandom());
             generate_data();
           end
@@ -161,28 +163,28 @@ module fifo_tb;
 
     err = 0;
 
-    if (q_o !== golden_q_o && rdreq_i)
+    if (q_o !== golden_q_o)
       begin
         $error("read data expected: %d, got: %d", golden_q_o, q_o);
-        //$stop();
+        $stop();
         err = 1;
       end
     if (empty_o !== golden_empty_o)
       begin
         $error("empty signal expected: %d, got: %d", golden_empty_o, empty_o);
-        //$stop();
+        $stop();
         err = 1;
       end
     if (full_o !== golden_full_o)
       begin
         $error("full signal expected: %d, got: %d", golden_full_o, full_o);
-        //$stop();
+        $stop();
         err = 1;
       end
     if (usedw_o !== golden_usedw_o)
       begin
         $error("used words amount expected: %d, got: %d", golden_usedw_o, usedw_o);
-        $stop();
+        //$stop();
         err = 1;
       end
     if (almost_full_o !== golden_almost_full_o)
@@ -204,10 +206,10 @@ module fifo_tb;
   endtask
 
   task automatic test(int num_tests);
-    push_test(DEPTH);
+    push_test(DEPTH * 2);
     if (correct_cnt)
       $display("push_test passed");
-    pop_test(DEPTH);
+    pop_test(DEPTH * 2);
     if (correct_cnt)
       $display("pop_test passed");
     mixed_test(num_tests);
