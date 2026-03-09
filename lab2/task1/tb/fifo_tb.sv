@@ -184,7 +184,7 @@ module fifo_tb;
     if (usedw_o !== golden_usedw_o)
       begin
         $error("used words amount expected: %d, got: %d", golden_usedw_o, usedw_o);
-        //$stop();
+        $stop();
         err = 1;
       end
     if (almost_full_o !== golden_almost_full_o)
