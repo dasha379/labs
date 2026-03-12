@@ -96,125 +96,83 @@ module fifo_tb;
     srst_i <= '0;
   endtask
 
-  task automatic generate_data();
-    data_i <= DWIDTH'($urandom());
+  task automatic generate_data(int num_tests);
+    repeat(num_tests)
+      begin
+        @ ( posedge clk_i );
+        data_i <= DWIDTH'($urandom());
+      end
   endtask
 
-  task automatic push_test(int num_tests);
-    repeat (num_tests)
+  task automatic tests(int num_tests, logic full, logic empty)
+    repeat(num_tests)
       begin
         @(posedge clk_i);
         wrreq_i <= '0;
         rdreq_i <= '0;
-        if (!golden_full_o)
-          begin
-            wrreq_i <= '1;
-            generate_data();
-            check();
-          end
+        if (!full)
+          wrreq_i <= '1;
+        else
+          wrreq_i <= '0;
+        if (!empty)
+          rdreq_i <= '1;
+        else
+          rdreq_i <= '0;
       end
   endtask
 
-  task automatic pop_test(int num_tests);
-    repeat (num_tests)
+  int err;
+
+  task automatic check(int num_tests);
+    repeat(num_tests)
       begin
-        @(posedge clk_i);
-        rdreq_i <= '0;
-        wrreq_i <= '0;
-        if (!golden_empty_o)
+        @ ( posedge clk_i );
+        err = 0;
+
+        if (q_o !== golden_q_o)
           begin
-            rdreq_i <= '1;
-            generate_data();
-            check();
+            $error("read data expected: %d, got: %d", golden_q_o, q_o);
+            err += 1;
+          end
+        if (empty_o !== golden_empty_o)
+          begin
+            $error("empty signal expected: %d, got: %d", golden_empty_o, empty_o);
+            err += 1;
+          end
+        if (full_o !== golden_full_o)
+          begin
+            $error("full signal expected: %d, got: %d", golden_full_o, full_o);
+            err += 1;
+          end
+        if (usedw_o[AWIDTH-1:0] !== golden_usedw_o)
+          begin
+            $error("used words amount expected: %d, got: %d", golden_usedw_o, usedw_o);
+            err += 1;
+          end
+        if (almost_full_o !== golden_almost_full_o)
+          begin
+            $error("almost_full signal expected: %d, got: %d", golden_almost_full_o, almost_full_o);
+            err += 1;
+          end
+        if (almost_empty_o !== golden_almost_empty_o)
+          begin
+            $error("almost_empty signal expected: %d, got: %d", golden_almost_empty_o, almost_empty_o);
+            err += 1;
           end
       end
-  endtask
-
-  task automatic mixed_test(int num_tests);
-    repeat (num_tests)
-      begin
-        @(posedge clk_i);
-        rdreq_i <= '0;
-        wrreq_i <= '0;
-        if (!golden_empty_o && !golden_full_o)
-          begin
-            wrreq_i <= 1'($urandom());
-            rdreq_i <= 1'($urandom());
-            generate_data();
-          end
-        else if (golden_empty_o && !golden_full_o)
-          begin
-            wrreq_i <= 1'($urandom());
-            generate_data();
-          end
-        else if (!golden_empty_o && golden_full_o)
-          begin
-            rdreq_i <= 1'($urandom());
-            generate_data();
-          end
-        check();
-      end
-  endtask
-
-  int correct_cnt;
-
-  task automatic check();
-    int err;
-
-    err = 0;
-
-    if (q_o !== golden_q_o)
-      begin
-        $error("read data expected: %d, got: %d", golden_q_o, q_o);
-        $stop();
-        err = 1;
-      end
-    if (empty_o !== golden_empty_o)
-      begin
-        $error("empty signal expected: %d, got: %d", golden_empty_o, empty_o);
-        $stop();
-        err = 1;
-      end
-    if (full_o !== golden_full_o)
-      begin
-        $error("full signal expected: %d, got: %d", golden_full_o, full_o);
-        $stop();
-        err = 1;
-      end
-    if (usedw_o !== golden_usedw_o)
-      begin
-        $error("used words amount expected: %d, got: %d", golden_usedw_o, usedw_o);
-        $stop();
-        err = 1;
-      end
-    if (almost_full_o !== golden_almost_full_o)
-      begin
-        $error("almost_full signal expected: %d, got: %d", golden_almost_full_o, almost_full_o);
-        $stop();
-        err = 1;
-      end
-    if (almost_empty_o !== golden_almost_empty_o)
-      begin
-        $error("almost_empty signal expected: %d, got: %d", golden_almost_empty_o, almost_empty_o);
-        $stop();
-        err = 1;
-      end
-    if (err == 0)
-      correct_cnt = 1;
-    else correct_cnt = 0;
 
   endtask
 
   task automatic test(int num_tests);
-    push_test(DEPTH * 2);
-    if (correct_cnt)
-      $display("push_test passed");
-    pop_test(DEPTH * 2);
-    if (correct_cnt)
-      $display("pop_test passed");
-    mixed_test(num_tests);
-    if (correct_cnt)
-      $display("mixed_test passed");
+    fork
+      generate_data(num_tests+2*DEPTH);
+      check(num_tests+2*DEPTH);
+      begin
+        tests(DEPTH, golden_full_o, 1);
+        tests(DEPTH, 1, golden_empty_o);
+        tests(num_tests, golden_full_o, golden_empty_o);
+      end
+    join_any
   endtask
 
   initial
@@ -227,7 +185,7 @@ module fifo_tb;
       reset();
       @ (posedge clk_i);
       test(num_tests);
-      $display("simulation is complete.");
+      $display("simulation is complete. errors occured - %d", err);
       $finish();
     end
   

@@ -96,7 +96,7 @@ module fifo #(
 
   assign full_o = cnt == DEPTH;
   assign empty_o = !valid;
-  assign usedw_o = cnt[AWIDTH-1:0];
+  assign usedw_o = cnt;
   assign almost_empty_o = (cnt < ALMOST_EMPTY_VALUE); 
   assign almost_full_o = (cnt >= ALMOST_FULL_VALUE);
 endmodule
