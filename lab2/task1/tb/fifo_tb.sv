@@ -104,20 +104,16 @@ module fifo_tb;
       end
   endtask
 
-  task automatic tests(int num_tests, logic full, logic empty);
+  task automatic tests(int num_tests, int w, int r);
     repeat(num_tests)
       begin
         @(posedge clk_i);
         wrreq_i <= '0;
         rdreq_i <= '0;
-        if (!full)
+        if (!golden_full_o && $urandom_range(1, 50) <= w)
           wrreq_i <= '1;
-        else
-          wrreq_i <= '0;
-        if (!empty)
+        if (!golden_empty_o && $urandom_range(1, 50) <= r)
           rdreq_i <= '1;
-        else
-          rdreq_i <= '0;
       end
   endtask
 
@@ -164,13 +160,17 @@ module fifo_tb;
   endtask
 
   task automatic test(int num_tests);
+    int total = 2*num_tests + 2*DEPTH + 10;
     fork
-      generate_data(num_tests+2*DEPTH);
-      check(num_tests+2*DEPTH);
+      generate_data(total);
+      check(total);
       begin
-        tests(DEPTH, golden_full_o, 1);
-        tests(DEPTH, 1, golden_empty_o);
-        tests(num_tests, golden_full_o, golden_empty_o);
+        tests(DEPTH+10, 50, 0);
+        tests(DEPTH, 0, 50);
+        // tests(num_tests, 20, 30);
+        // tests(num_tests, 30, 20);
+        tests(num_tests, 10, 40);
+        tests(num_tests, 40, 5);
       end
     join_any
   endtask
