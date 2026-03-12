@@ -104,7 +104,7 @@ module fifo_tb;
       end
   endtask
 
-  task automatic tests(int num_tests, logic full, logic empty)
+  task automatic tests(int num_tests, logic full, logic empty);
     repeat(num_tests)
       begin
         @(posedge clk_i);
