@@ -160,17 +160,16 @@ module fifo_tb;
   endtask
 
   task automatic test(int num_tests);
-    int total = 2*num_tests + 2*DEPTH + 10;
+    int total = 3*num_tests + 2*DEPTH + 10;
     fork
       generate_data(total);
       check(total);
       begin
         tests(DEPTH+10, 50, 0);
         tests(DEPTH, 0, 50);
-        // tests(num_tests, 20, 30);
-        // tests(num_tests, 30, 20);
-        tests(num_tests, 10, 40);
-        tests(num_tests, 40, 5);
+        tests(num_tests, 25, 25);
+        tests(num_tests, 10, 40); // больше чтения
+        tests(num_tests, 40, 5); // больше записей
       end
     join_any
   endtask
