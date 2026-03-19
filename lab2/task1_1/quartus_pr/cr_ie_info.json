@@ -1,0 +1,22 @@
+{
+	"system" : {
+		"platform" : "linux64",
+		"os_name" : "Ubuntu 16.04.7",
+		"os_version" : "16"
+	},
+	"error" : {
+		"executable" : "quartus_map",
+		"comment" : "not_applicable",
+		"error_message" : "Segment Violation at 0x28",
+		"source_file" : "unknown",
+		"line" : "0",
+		"stack_trace" : "\t0x77eb76b85590: db_cdb_sgate + 0x13b590 (_ZN15CDB_SGATE_ITERM7set_vccEv + 0)\n",
+		"subsystem" : "unknown"
+	},
+	"quartus" : {
+		"quartus_bits" : "64",
+		"version" : "18.1.0",
+		"build" : "625",
+		"edition" : "Lite Edition"
+	}
+}
