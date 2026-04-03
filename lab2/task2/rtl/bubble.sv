@@ -23,15 +23,32 @@ module bubble #(
 
   logic [AWIDTH - 1 : 0] i, j;
   logic enable, delayed_en;
+  logic swapped;
+  logic end_sort_reg;
+  logic single_el;
+  logic flag;
+
+  assign single_el = (data_size == AWIDTH'(1));
+  assign flag = enable && !end_sort && !single_el;
+
+  always_ff @ (posedge clk_i)
+    if (srst_i)
+      swapped <= '0;
+    else
+      if (flag)
+        if (i == '0)
+          swapped <= '0;
+        else if (a_in > b_in)
+          swapped <= '1;
 
   always_ff @ (posedge clk_i)
     if (srst_i)
       delayed_en <= 1'b1;
     else
-      if (en)
-        delayed_en <= en ^ delayed_en;
-      else
-        delayed_en <= '1;
+        if (en)
+          delayed_en <= en ^ delayed_en;
+        else
+          delayed_en <= '1;
   
   assign enable = en && !delayed_en;
 
@@ -39,31 +56,41 @@ module bubble #(
     if (srst_i)
       i <= '0;
     else
-      if (!end_sort && enable)
-        if (i < (data_size - 2'd2 - j))
-          i <= i + AWIDTH'(1);
-        else
-          i <= '0;
+        if (flag)
+          if (i < (data_size - AWIDTH'(1) - j))
+            i <= i + AWIDTH'(1);
+          else
+            i <= '0;
   
   always_ff @ (posedge clk_i)
     if (srst_i)
       j <= '0;
     else
-      if (!end_sort && enable)
-        if (i == (data_size - 2'd2 - j))
-          j <= j + AWIDTH'(1);
-      else if (end_sort == '1)
-        j <= '0;
+        if (flag)
+          if (i == (data_size - AWIDTH'(1) - j))
+            if (swapped)
+              j <= j + AWIDTH'(1);
+        else if (end_sort)
+          j <= '0;
 
-  assign end_sort = (j >= (data_size - AWIDTH'(1)));
+  always_ff @ (posedge clk_i)
+    if (srst_i)
+      end_sort_reg <= '0;
+    else
+      if (enable && (single_el || j >= (data_size - AWIDTH'(1)) || (i == (data_size - AWIDTH'(1) - j) && !swapped) ))
+        end_sort_reg <= '1;
+      else if (!enable)
+        end_sort_reg <= '0;
+  
+  assign end_sort = end_sort_reg;
 
-  assign a_addr = i;
-  assign b_addr = i + AWIDTH'(1);
+  assign a_addr = single_el ? '0 : i;
+  assign b_addr = single_el ? '0 : (i + AWIDTH'(1));
 
   assign a_out = a_valid ? b_in : a_in;
   assign b_out = b_valid ? a_in : b_in;
 
-  assign a_valid = ( enable && ( !end_sort ) && ( a_in > b_in ) );
+  assign a_valid = flag && ( a_in > b_in );
   assign b_valid = a_valid;
 
 endmodule

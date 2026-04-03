@@ -2,8 +2,8 @@
 
 module sorting_tb;
   localparam DWIDTH = 8;
-  localparam AWIDTH = 8;
-  localparam WORDS = 1 << AWIDTH - 1;
+  localparam AWIDTH = 4;
+  localparam WORDS = (1 << AWIDTH) - 1;
   
   logic                  clk_i;
   logic                  srst_i;
@@ -56,39 +56,38 @@ module sorting_tb;
     logic [AWIDTH - 1 : 0] size;
   } packet;
 
-  task automatic wait_between_packets(logic [AWIDTH - 1:0] size);
-
-    repeat (size * size)
-      begin
-        @(posedge clk_i);
-        if (snk_ready_o)
-          return;
-      end
-
+  task automatic data_form(int prob);
+    packet p_in;
+    if (prob == 100)
+      p_in.size = WORDS;
+    else if (prob == 0)
+      p_in.size = 1;
+    else
+      p_in.size = AWIDTH'($urandom());
+    p_in.data = new[p_in.size];
+    for (int i = 0; i < p_in.size; ++i)
+      p_in.data[i] = DWIDTH'($urandom());
+    send(p_in);
   endtask
 
   task automatic generate_data();
-    packet p_in;
+    int num = 15;
     repeat(5)
       begin
-        p_in.size = 10;
-        p_in.data = new[p_in.size];
-        for (int i = 0; i < p_in.size; ++i)
-          p_in.data[i] = DWIDTH'($urandom());
-        send(p_in);
-        wait_between_packets(p_in.size);
+        data_form(1);
       end
-    sorted_order(15);
-    reversed_order(15);
+    data_form(100);
+    data_form(0);
+    @(posedge clk_i);
+    sorted_order(num);
+    reversed_order(num);
+    wait(snk_ready_o == '1);
   endtask
 
   mailbox#(packet) in_m = new();
 
   task automatic send(packet p_in);
     wait(snk_ready_o == '1);
-
-    if (src_valid_o == '1)
-      $error("valid signal is 1, expected 0");
 
     for (int i = 0; i < p_in.size; ++i)
       begin
@@ -116,7 +115,6 @@ module sorting_tb;
     for (int i = 0; i < size; ++i)
       s_p.data[i] = i;
     send(s_p);
-    wait_between_packets(size);
   endtask
 
   task automatic reversed_order(int size);
@@ -126,7 +124,6 @@ module sorting_tb;
     for (int i = 0; i < size; ++i)
       s_p.data[i] = size - i - 1;
     send(s_p);
-    wait_between_packets(size);
   endtask
 
   task automatic receive();
@@ -135,7 +132,8 @@ module sorting_tb;
     int cnt;
     forever
       begin
-        wait(src_startofpacket_o == '1);
+        //@(posedge clk_i);
+        wait(src_valid_o == '1 && src_startofpacket_o == '1);
 
         in_m.get(out_p);
         cnt += 1;
@@ -143,6 +141,7 @@ module sorting_tb;
 
         for (int i = 0; i < out_p.size; ++i)
           $display("current array: %d", out_p.data[i]);
+
         out_p.data.sort();
 
         for (int i = 0; i < out_p.size; ++i)
@@ -150,6 +149,9 @@ module sorting_tb;
             @(posedge clk_i);
             start = (i == 0);
             end_ = (i == out_p.size - 1);
+
+            while (!src_valid_o) @ (posedge clk_i);
+
             if (out_p.data[i] != src_data_o)
               $error("data is not correct. expected: %d, got: %d", out_p.data[i], src_data_o);
             

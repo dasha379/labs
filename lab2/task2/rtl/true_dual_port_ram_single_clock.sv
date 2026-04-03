@@ -16,29 +16,29 @@ module true_dual_port_ram_single_clock
 	// Port A 
 	always_ff @ (posedge clk)
 	begin
-		if (we_a) 
-		begin
-			ram[addr_a] <= data_a;
-			q_a <= data_a;
-		end
-		else
-		begin
-			q_a <= ram[addr_a];
-		end
+			if (we_a) 
+			begin
+				ram[addr_a] <= data_a;
+				q_a <= data_a;
+			end
+			else
+			begin
+				q_a <= ram[addr_a];
+			end
 	end 
 
 	// Port B 
 	always_ff @ (posedge clk)
 	begin
-		if (we_b)
-		begin
-			ram[addr_b] <= data_b;
-			q_b <= data_b;
-		end
-		else 
-		begin
-			q_b <= ram[addr_b];
-		end
+			if (we_b)
+			begin
+				ram[addr_b] <= data_b;
+				q_b <= data_b;
+			end
+			else 
+			begin
+				q_b <= ram[addr_b];
+			end
 	end
 
 endmodule

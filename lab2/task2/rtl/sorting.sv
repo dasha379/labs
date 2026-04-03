@@ -32,13 +32,13 @@ module sorting #(
   logic [AWIDTH - 1 : 0] data_size;
   logic [AWIDTH - 1 : 0] addr;
   logic wr_en;
-  assign wr_en = ( snk_valid_i && ( state == INPUT_S || state == WAIT_S && snk_startofpacket_i ) );
+  assign wr_en = ( snk_valid_i && ( state == INPUT_S || (state == WAIT_S && snk_startofpacket_i) ) );
 
   always_ff @ (posedge clk_i)
     if ( srst_i )
       addr <= '0;
     else
-      if ( state == INPUT_S || wr_en )
+      if ( wr_en )
         addr <= addr + snk_valid_i;
       else if ( state == OUTPUT_S )
         addr <= addr + AWIDTH'(1);
@@ -106,7 +106,8 @@ module sorting #(
     begin
       next_state = state;
       case(state)
-        WAIT_S:   if (snk_valid_i && snk_startofpacket_i) next_state = INPUT_S;
+        WAIT_S:   if (snk_valid_i && snk_endofpacket_i) next_state = OUTPUT_S;
+                  else if (snk_valid_i && snk_startofpacket_i) next_state = INPUT_S;
         INPUT_S:  if (snk_valid_i && snk_endofpacket_i)   next_state = SORT_S;
         SORT_S:   if (end_sort)                           next_state = OUTPUT_S;
         OUTPUT_S: if (addr == data_size)                  next_state = WAIT_S;
@@ -121,3 +122,4 @@ module sorting #(
   assign src_valid_o         = (state == OUTPUT_S) && (addr > '0);
 
 endmodule
+
