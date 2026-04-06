@@ -56,20 +56,6 @@ module sorting_tb;
     logic [AWIDTH - 1 : 0] size;
   } packet;
 
-  // task automatic data_form(int prob);
-  //   packet p_in;
-  //   if (prob == 100)
-  //     p_in.size = WORDS;
-  //   else if (prob == 0)
-  //     p_in.size = 1;
-  //   else
-  //     p_in.size = AWIDTH'($urandom());
-  //   p_in.data = new[p_in.size];
-  //   for (int i = 0; i < p_in.size; ++i)
-  //     p_in.data[i] = DWIDTH'($urandom());
-  //   send(p_in, 70);
-  // endtask
-
   task automatic generate_data();
     int num = 10;
     packet p_in;
@@ -161,7 +147,6 @@ module sorting_tb;
     int cnt;
     forever
       begin
-        @(posedge clk_i);
         @(posedge clk_i);
         wait(src_valid_o == '1 && src_startofpacket_o == '1)
 
