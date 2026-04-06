@@ -39,7 +39,7 @@ module sorting #(
     if ( srst_i )
       wr_addr <= '0;
     else
-      if ( wr_en && state == INPUT_S )
+      if ( wr_en )
         wr_addr <= wr_addr + snk_valid_i;
       else if (state == WAIT_S)
         wr_addr <= '0;
@@ -56,8 +56,11 @@ module sorting #(
   always_ff @ (posedge clk_i)
     if ( srst_i )
       data_size <= '0;
-    else if ( wr_en && snk_endofpacket_i )
-      data_size <= wr_addr + AWIDTH'(2);
+    else if ( wr_en && snk_endofpacket_i)
+      if (wr_addr > '0)
+        data_size <= wr_addr + AWIDTH'(2);
+      else
+        data_size <= AWIDTH'(1);
 
   logic [AWIDTH - 1 : 0] a_addr;
   logic                  a_valid;
@@ -87,7 +90,7 @@ module sorting #(
         ram_data = a_in;
       end
       OUTPUT_S: begin
-        ram_addr = rd_addr + AWIDTH'(1);
+        ram_addr = rd_addr;
         ram_we = 1'b0;
         ram_data = '0;
       end
