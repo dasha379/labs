@@ -1,6 +1,5 @@
 module bubble #(
   parameter DWIDTH = 8,
-  parameter WORDS = 5,
   parameter AWIDTH = 3
 ) (
   input  logic                  clk_i,
@@ -26,10 +25,11 @@ module bubble #(
   logic swapped;
   logic end_sort_reg;
   logic single_el;
-  logic flag;
+  logic flag, done;
 
   assign single_el = (data_size == AWIDTH'(1));
   assign flag = enable && !end_sort && !single_el;
+  assign done = flag && (i == (data_size - AWIDTH'(2) - j));
 
   always_ff @ (posedge clk_i)
     if (srst_i)
@@ -66,10 +66,8 @@ module bubble #(
     if (srst_i)
       j <= '0;
     else
-        if (flag)
-          if (i == (data_size - AWIDTH'(2) - j))
-            if (swapped)
-              j <= j + AWIDTH'(1);
+        if (flag && done)
+          j <= j + AWIDTH'(1);
         else if (end_sort)
           j <= '0;
 
@@ -77,9 +75,12 @@ module bubble #(
     if (srst_i)
       end_sort_reg <= '0;
     else
-      if (enable && (single_el || j >= (data_size - AWIDTH'(1)) || (i == (data_size - AWIDTH'(2) - j) && !swapped) ))
-        end_sort_reg <= '1;
-      else if (!enable)
+      if (enable)
+        if ( single_el || j > (data_size - AWIDTH'(1)) )
+          end_sort_reg <= '1;
+        else if ( i == (data_size - AWIDTH'(2) - j) && !swapped )
+          end_sort_reg <= '1;
+      else
         end_sort_reg <= '0;
   
   assign end_sort = end_sort_reg;

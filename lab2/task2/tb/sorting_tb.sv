@@ -56,29 +56,46 @@ module sorting_tb;
     logic [AWIDTH - 1 : 0] size;
   } packet;
 
-  task automatic data_form(int prob);
+  // task automatic data_form(int prob);
+  //   packet p_in;
+  //   if (prob == 100)
+  //     p_in.size = WORDS;
+  //   else if (prob == 0)
+  //     p_in.size = 1;
+  //   else
+  //     p_in.size = AWIDTH'($urandom());
+  //   p_in.data = new[p_in.size];
+  //   for (int i = 0; i < p_in.size; ++i)
+  //     p_in.data[i] = DWIDTH'($urandom());
+  //   send(p_in, 70);
+  // endtask
+
+  task automatic generate_data();
+    int num = 10;
     packet p_in;
-    if (prob == 100)
-      p_in.size = WORDS;
-    else if (prob == 0)
-      p_in.size = 1;
-    else
-      p_in.size = AWIDTH'($urandom());
+    repeat (5)
+      begin
+        p_in.size = AWIDTH'($urandom());
+        p_in.data = new[p_in.size];
+        for (int i = 0; i < p_in.size; ++i)
+          p_in.data[i] = DWIDTH'($urandom());
+        send(p_in, 65);
+      end
+
+    @(posedge clk_i);
+    p_in.size = AWIDTH'(1);
     p_in.data = new[p_in.size];
     for (int i = 0; i < p_in.size; ++i)
       p_in.data[i] = DWIDTH'($urandom());
-    send(p_in);
-  endtask
+    send(p_in, 100);
 
-  task automatic generate_data();
-    int num = 15;
-    repeat(5)
-      begin
-        data_form(1);
-      end
-    data_form(100);
-    data_form(0);
     @(posedge clk_i);
+    p_in.size = AWIDTH'(WORDS);
+    p_in.data = new[p_in.size];
+    for (int i = 0; i < p_in.size; ++i)
+      p_in.data[i] = DWIDTH'($urandom());
+    send(p_in, 100);
+  
     sorted_order(num);
     reversed_order(num);
     wait(snk_ready_o == '1);
@@ -86,16 +103,28 @@ module sorting_tb;
 
   mailbox#(packet) in_m = new();
 
-  task automatic send(packet p_in);
+  task automatic send(packet p_in, int prob);
+    int i;
     wait(snk_ready_o == '1);
 
-    for (int i = 0; i < p_in.size; ++i)
+    while (i < p_in.size)
       begin
         @ (posedge clk_i);
-        snk_data_i <= p_in.data[i];
-        snk_valid_i <= '1;
-        snk_startofpacket_i <= (i == 0);
-        snk_endofpacket_i <= (i == p_in.size - 1);
+        if ($urandom_range(1, 100) <= prob)
+          begin
+            snk_valid_i <= '1;
+            snk_data_i <= p_in.data[i];
+            snk_startofpacket_i <= (i == 0);
+            snk_endofpacket_i <= (i == (p_in.size - 1));
+            i += 1;
+          end
+        else
+          begin
+            snk_valid_i <= '0;
+            snk_data_i <= 'x;
+            snk_startofpacket_i <= '0;
+            snk_endofpacket_i <= '0;
+          end
       end
 
     in_m.put(p_in);
@@ -114,7 +143,7 @@ module sorting_tb;
     s_p.size = size;
     for (int i = 0; i < size; ++i)
       s_p.data[i] = i;
-    send(s_p);
+    send(s_p, 100);
   endtask
 
   task automatic reversed_order(int size);
@@ -123,7 +152,7 @@ module sorting_tb;
     s_p.size = size;
     for (int i = 0; i < size; ++i)
       s_p.data[i] = size - i - 1;
-    send(s_p);
+    send(s_p, 100);
   endtask
 
   task automatic receive();
@@ -132,10 +161,14 @@ module sorting_tb;
     int cnt;
     forever
       begin
-        //@(posedge clk_i);
-        wait(src_valid_o == '1 && src_startofpacket_o == '1);
+        @(posedge clk_i);
+        @(posedge clk_i);
+        wait(src_valid_o == '1 && src_startofpacket_o == '1)
 
-        in_m.get(out_p);
+        if (!in_m.try_get(out_p))
+          begin
+            $error("no data");
+          end
         cnt += 1;
         $display("===packet %d===\n", cnt);
 
@@ -186,6 +219,13 @@ module sorting_tb;
       $display("simulation is complete =)");
 
       $finish();
+    end
+
+  initial
+    begin
+      repeat (20000) @ (posedge clk_i);
+      $display("timeout");
+      $stop();
     end
 
 endmodule
