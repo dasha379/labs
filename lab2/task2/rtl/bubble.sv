@@ -57,7 +57,7 @@ module bubble #(
       i <= '0;
     else
         if (flag)
-          if (i < (data_size - AWIDTH'(2) - j))
+          if (i < (data_size - AWIDTH'(3) - j))
             i <= i + AWIDTH'(1);
           else
             i <= '0;
@@ -78,7 +78,7 @@ module bubble #(
       if (enable)
         if ( single_el || j > (data_size - AWIDTH'(1)) )
           end_sort_reg <= '1;
-        else if ( i == (data_size - AWIDTH'(2) - j) && !swapped )
+        else if ( i == (data_size - AWIDTH'(3) - j) && !swapped )
           end_sort_reg <= '1;
       else
         end_sort_reg <= '0;
