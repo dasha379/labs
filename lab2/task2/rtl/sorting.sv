@@ -61,6 +61,9 @@ module sorting #(
         data_size <= wr_addr + AWIDTH'(2);
       else
         data_size <= AWIDTH'(1);
+  
+  logic single;
+  assign single = data_size == AWIDTH'(1);
 
   logic [AWIDTH - 1 : 0] a_addr;
   logic                  a_valid;
@@ -79,6 +82,20 @@ module sorting #(
   
   always_comb begin
     case (state)
+      WAIT_S: begin
+        if (snk_startofpacket_i == '1)
+          begin
+            ram_addr = wr_addr;
+            ram_we = wr_en;
+            ram_data = snk_data_i;
+          end
+        else
+          begin
+            ram_addr = '0;
+            ram_we = 1'b0;
+            ram_data = '0;
+          end
+      end
       INPUT_S: begin
         ram_addr = wr_addr;
         ram_we = wr_en;
@@ -146,19 +163,19 @@ module sorting #(
     begin
       next_state = state;
       case(state)
-        WAIT_S:   if (snk_valid_i && snk_endofpacket_i) next_state = OUTPUT_S;
+        WAIT_S:   if (snk_valid_i && snk_endofpacket_i)        next_state = OUTPUT_S;
                   else if (snk_valid_i && snk_startofpacket_i) next_state = INPUT_S;
-        INPUT_S:  if (snk_valid_i && snk_endofpacket_i)   next_state = SORT_S;
-        SORT_S:   if (end_sort)                           next_state = OUTPUT_S;
-        OUTPUT_S: if (rd_addr == data_size - AWIDTH'(1))                  next_state = WAIT_S;
-        default:                                          next_state = WAIT_S;
+        INPUT_S:  if (snk_valid_i && snk_endofpacket_i)        next_state = SORT_S;
+        SORT_S:   if (end_sort)                                next_state = OUTPUT_S;
+        OUTPUT_S: if (rd_addr == data_size - AWIDTH'(1))       next_state = WAIT_S;
+        default:                                               next_state = WAIT_S;
       endcase
     end
 
   assign src_data_o          = a_out;
   assign snk_ready_o         = state == WAIT_S;
-  assign src_startofpacket_o = (state == OUTPUT_S) && (rd_addr == AWIDTH'(0));
-  assign src_endofpacket_o   = (state == OUTPUT_S) && (rd_addr == data_size - AWIDTH'(1));
+  assign src_startofpacket_o = (state == OUTPUT_S) && (~single && rd_addr == AWIDTH'(1) || single && rd_addr == '0);
+  assign src_endofpacket_o   = (state == OUTPUT_S) && (~single && rd_addr == data_size - AWIDTH'(1) || single && rd_addr == '0);
   assign src_valid_o         = (state == OUTPUT_S) && (rd_addr >= '0);
 
 endmodule
