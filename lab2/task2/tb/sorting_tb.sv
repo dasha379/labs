@@ -61,11 +61,11 @@ module sorting_tb;
     packet p_in;
     repeat (5)
       begin
-        p_in.size = AWIDTH'($urandom());
+        p_in.size = $urandom_range(1, WORDS);
         p_in.data = new[p_in.size];
         for (int i = 0; i < p_in.size; ++i)
           p_in.data[i] = DWIDTH'($urandom());
-        send(p_in, 65);
+        send(p_in, 70);
       end
 
     @(posedge clk_i);

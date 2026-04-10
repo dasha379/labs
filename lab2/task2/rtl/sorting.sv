@@ -41,7 +41,7 @@ module sorting #(
     else
       if ( wr_en )
         wr_addr <= wr_addr + snk_valid_i;
-      else if (state == WAIT_S)
+      else if (state == WAIT_S || state == OUTPUT_S)
         wr_addr <= '0;
 
   always_ff @ (posedge clk_i)
