@@ -148,8 +148,11 @@ module sorting_tb;
     forever
       begin
         @(posedge clk_i);
-        wait(src_valid_o == '1 && src_startofpacket_o == '1)
 
+        wait(src_valid_o == '1 || src_startofpacket_o == '1);
+        if (src_valid_o && !src_startofpacket_o || !src_valid_o && src_startofpacket_o)
+          $error("valid and start signal error");
+        
         if (!in_m.try_get(out_p))
           begin
             $error("no data");
@@ -167,8 +170,6 @@ module sorting_tb;
             @(posedge clk_i);
             start = (i == 0);
             end_ = (i == out_p.size - 1);
-
-            while (!src_valid_o) @ (posedge clk_i);
 
             if (out_p.data[i] != src_data_o)
               $error("data is not correct. expected: %d, got: %d", out_p.data[i], src_data_o);

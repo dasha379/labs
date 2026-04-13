@@ -56,11 +56,8 @@ module sorting #(
   always_ff @ (posedge clk_i)
     if ( srst_i )
       data_size <= '0;
-    else if ( wr_en && snk_endofpacket_i)
-      if (wr_addr > '0)
-        data_size <= wr_addr + AWIDTH'(2);
-      else
-        data_size <= AWIDTH'(1);
+    else if ( wr_en && snk_endofpacket_i )
+      data_size <= wr_addr + AWIDTH'(1);
   
   logic single;
   assign single = data_size == AWIDTH'(1);
@@ -141,7 +138,7 @@ module sorting #(
     .clk_i    (clk_i),
     .srst_i   (srst_i || state == WAIT_S),
     .en       (state == SORT_S),
-    .data_size(data_size),
+    .data_size(data_size + AWIDTH'(1)),
     .a_in     (a_out),
     .b_in     (b_out),
     .a_addr   (a_addr),
@@ -167,7 +164,7 @@ module sorting #(
                   else if (snk_valid_i && snk_startofpacket_i) next_state = INPUT_S;
         INPUT_S:  if (snk_valid_i && snk_endofpacket_i)        next_state = SORT_S;
         SORT_S:   if (end_sort)                                next_state = OUTPUT_S;
-        OUTPUT_S: if (rd_addr == data_size - AWIDTH'(1))       next_state = WAIT_S;
+        OUTPUT_S: if (rd_addr == data_size)       next_state = WAIT_S;
         default:                                               next_state = WAIT_S;
       endcase
     end
@@ -175,8 +172,8 @@ module sorting #(
   assign src_data_o          = a_out;
   assign snk_ready_o         = state == WAIT_S;
   assign src_startofpacket_o = (state == OUTPUT_S) && (~single && rd_addr == AWIDTH'(1) || single && rd_addr == '0);
-  assign src_endofpacket_o   = (state == OUTPUT_S) && (~single && rd_addr == data_size - AWIDTH'(1) || single && rd_addr == '0);
-  assign src_valid_o         = (state == OUTPUT_S) && (rd_addr >= '0);
+  assign src_endofpacket_o   = (state == OUTPUT_S) && (~single && rd_addr == data_size || single && rd_addr == '0);
+  assign src_valid_o         = (state == OUTPUT_S) && (rd_addr > '0 && ~single || rd_addr == '0 && single);
 
 endmodule
 

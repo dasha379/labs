@@ -24,11 +24,9 @@ module bubble #(
   logic enable, delayed_en;
   logic swapped;
   logic end_sort_reg;
-  logic single_el;
   logic flag, done;
 
-  assign single_el = (data_size == AWIDTH'(1));
-  assign flag = enable && !end_sort && !single_el;
+  assign flag = enable && !end_sort;
   assign done = flag && (i == (data_size - AWIDTH'(2) - j));
 
   always_ff @ (posedge clk_i)
@@ -76,7 +74,7 @@ module bubble #(
       end_sort_reg <= '0;
     else
       if (enable)
-        if ( single_el || j > (data_size - AWIDTH'(1)) )
+        if ( j > (data_size - AWIDTH'(1)) )
           end_sort_reg <= '1;
         else if ( i == (data_size - AWIDTH'(3) - j) && !swapped )
           end_sort_reg <= '1;
@@ -85,8 +83,8 @@ module bubble #(
   
   assign end_sort = end_sort_reg;
 
-  assign a_addr = single_el ? '0 : i;
-  assign b_addr = single_el ? '0 : (i + AWIDTH'(1));
+  assign a_addr = i;
+  assign b_addr = (i + AWIDTH'(1));
 
   assign a_out = a_valid ? b_in : a_in;
   assign b_out = b_valid ? a_in : b_in;
