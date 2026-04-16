@@ -32,10 +32,6 @@ class lifo_monitor #(
     endtask
 
     task automatic run();
-        // fork
-        //     check();
-        //     stack_fill();
-        // join
         stack_fill();
     endtask
 
