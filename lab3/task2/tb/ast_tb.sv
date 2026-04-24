@@ -54,7 +54,7 @@ module ast_tb;
     );
 
     mailbox#(ast_transaction) gen2drv = new();
-    mailbox#(ast_transaction) gen2chk = new();
+    mailbox#(ast_transaction) drv2chk = new();
 
     ast_generator #(
         .DATA_IN_W  (DATA_IN_W),
@@ -70,7 +70,7 @@ module ast_tb;
         .EMPTY_IN_W (EMPTY_IN_W),
         .EMPTY_OUT_W(EMPTY_OUT_W),
         .CHANNEL_W  (CHANNEL_W)
-    ) drv = new(intf, gen2drv, gen2chk);
+    ) drv = new(intf, gen2drv, drv2chk);
 
     ast_checker #(
         .DATA_IN_W  (DATA_IN_W),
@@ -78,7 +78,7 @@ module ast_tb;
         .EMPTY_IN_W (EMPTY_IN_W),
         .EMPTY_OUT_W(EMPTY_OUT_W),
         .CHANNEL_W  (CHANNEL_W)
-    ) chk = new(intf, gen2chk);
+    ) chk = new(intf, drv2chk);
 
     task reset();
         srst_i <= '1;

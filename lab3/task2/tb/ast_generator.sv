@@ -43,14 +43,14 @@ class ast_generator #(
         p.size_i = tmp / (DATA_IN_W / 8);
 
         if (p.size_i == 0 && tmp > 0)
-            p.empty_i = DATA_IN_W / 8;
+            p.empty_i = DATA_IN_W / 8 - 1;
         else
             p.empty_i = tmp % (DATA_IN_W / 8);
 
         p.size_o = tmp / (DATA_OUT_W / 8);
 
         if (p.size_o == 0 && tmp > 0)
-            p.empty_o = DATA_OUT_W / 8;
+            p.empty_o = DATA_OUT_W / 8 - 1;
         else
             p.empty_o = tmp % (DATA_OUT_W / 8);
 
@@ -60,7 +60,6 @@ class ast_generator #(
         if (p.size_i > 0)
             for (int i = 0; i < p.size_i; ++i)
                 p.ast_data_i[i] = DATA_IN_W'($urandom());
-
         gen2drv.put(p);
     endtask
 

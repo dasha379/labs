@@ -7,7 +7,7 @@ class ast_driver #(
 );
     localparam int MAX_SIZE = 65536;
     mailbox#(ast_transaction) gen2drv;
-    mailbox#(ast_transaction) gen2chk;
+    mailbox#(ast_transaction) drv2chk;
     
     virtual ast_interface #(
         .DATA_IN_W(DATA_IN_W),
@@ -23,9 +23,9 @@ class ast_driver #(
         .EMPTY_IN_W(EMPTY_IN_W),
         .EMPTY_OUT_W(EMPTY_OUT_W),
         .CHANNEL_W(CHANNEL_W)
-    ) intf, mailbox#(ast_transaction) gen2drv, mailbox#(ast_transaction) gen2chk);
+    ) intf, mailbox#(ast_transaction) gen2drv, mailbox#(ast_transaction) drv2chk);
         this.gen2drv = gen2drv;
-        this.gen2chk = gen2chk;
+        this.drv2chk = drv2chk;
         this.intf = intf;
     endfunction
 
@@ -51,7 +51,7 @@ class ast_driver #(
             begin
                 int i = 0;
                 gen2drv.get(p);
-                gen2chk.put(p);
+                drv2chk.put(p);
                 if (p.size_i > 0) begin
                     while (i < p.size_i)
                         begin
