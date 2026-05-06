@@ -61,7 +61,7 @@ class ast_driver #(
             begin
                 int i = 0;
                 gen2drv.get(p);
-                
+                drv2chk.put(p);
                 if (p.ast_data_i.size() > 0) begin
                     while (i < p.ast_data_i.size())
                         begin
@@ -84,7 +84,7 @@ class ast_driver #(
                     drive('1, '1, 'x, p.channel_i, p.empty_i, '1, p.dir);
                     @ (intf.in_cb);
                 end
-                drv2chk.put(p);
+                
                 @ (intf.in_cb);
             end
     endtask

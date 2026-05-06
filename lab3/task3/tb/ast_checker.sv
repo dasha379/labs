@@ -27,7 +27,7 @@ class ast_checker #(
             begin
                 $display("checking....");
                 if (q.ast_data_i !== p.ast_data_i)
-                    $error("wrong data: expected - %b, got - %b", p.ast_data_i, q.ast_data_i);
+                    $error("wrong data: expected - %d, got - %d", p.ast_data_i, q.ast_data_i);
                 if (q.channel_i !== p.channel_i)
                     $error("wrong channel signal: expected - %d, got - %d", p.channel_i, q.channel_i);
                 if (q.empty_i !== p.empty_i)
@@ -36,6 +36,7 @@ class ast_checker #(
     endtask
 
     task automatic run(int trans);
+        int cnt;
         ast_transaction #(
             .DATA_WIDTH    (DATA_WIDTH),
             .EMPTY_WIDTH   (EMPTY_WIDTH),
@@ -46,11 +47,27 @@ class ast_checker #(
             .EMPTY_WIDTH   (EMPTY_WIDTH),
             .CHANNEL_WIDTH (CHANNEL_WIDTH)
         ) q;
+
+        $display("starting checking");
+        
         forever
             begin
-                drv2chk.get(p);
-                mon2chk.get(q);
-                check(p, q);
+                $display("%d", drv2chk.num());
+                $display("%d", mon2chk.num());
+                drv2chk.peek(p);
+                mon2chk.peek(q);
+                if (p.dir == q.dir)
+                    begin
+                        drv2chk.get(p);
+                        mon2chk.get(q);
+                        $display("received data");
+                        check(p, q);
+                        cnt += 1;
+                        $display("TEST %d COMPLETED", cnt);
+                    end
+                else
+                    mon2chk.get(q);
+                if (cnt == trans) break;
             end
     endtask
 endclass

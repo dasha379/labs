@@ -60,6 +60,7 @@ module ast_tb;
             assign intf_out[i].ast_channel = ast_channel_o[i];
             assign ast_ready_i[i] = intf_out[i].ast_ready;
         end
+        
     endgenerate
 
     ast_dmx # (
@@ -127,14 +128,28 @@ module ast_tb;
     endtask
 
     task automatic test(int valid_pr);
-        int total = 5;
+        int total = 4;
         fork
             begin
-                repeat (5) begin 
-                gen.run(DATA_WIDTH / 8, 1);
-                repeat (5) @ (posedge clk_i);end
-                //gen.run(MAX_SIZE, 1);
-                // gen.run($urandom_range(DATA_WIDTH / 8, MAX_SIZE - 1), TX_DIR_W'($urandom()));
+                // some packets of 1 word
+                // repeat (5)
+                // begin 
+                //     gen.run(DATA_WIDTH / 8, 1);
+                //     repeat (5) @ (posedge clk_i);
+                //     gen.run(DATA_WIDTH / 8, 2);
+                //     repeat (5) @ (posedge clk_i);
+                // end
+                // repeat (10) @ (posedge clk_i);
+
+                // max packet
+                gen.run(MAX_SIZE, 1); repeat (5) @ (posedge clk_i);
+                // random packet
+                gen.run($urandom_range(DATA_WIDTH / 8, MAX_SIZE - 1), TX_DIR_W'($urandom()));
+                // no empty packet
+                gen.run($urandom_range(1, 5) * DATA_WIDTH / 8, 0);
+                // with empty packet
+                gen.run($urandom_range(1, 5) * DATA_WIDTH / 8 + $urandom_range(1, 10), TX_DIR_W'($urandom()));
+                // small packet
                 // gen.run($urandom_range(1, DATA_WIDTH/8), TX_DIR_W'($urandom()));
             end
             drv.run(valid_pr, total);
@@ -145,6 +160,7 @@ module ast_tb;
 
     initial
         begin
+            intf_in.out_cb.ast_ready <= '1;
             reset();
             test(100);
             //test(0);

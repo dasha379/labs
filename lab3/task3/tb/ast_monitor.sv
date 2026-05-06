@@ -37,8 +37,8 @@ class ast_monitor #(
 
     task automatic set_ready(virtual ast_interface vif);
         forever begin
-            vif.out_cb.ast_ready <= '1;
             @ (vif.out_cb);
+            vif.out_cb.ast_ready <= '1;
         end
     endtask
 
@@ -48,29 +48,25 @@ class ast_monitor #(
         logic [DATA_WIDTH - 1 : 0] d [$];
         
         repeat(trans) begin
-            while (1) begin
-                @(vif.out_cb);
-                if (vif.out_cb.ast_valid && vif.out_cb.ast_startofpacket && vif.ast_ready)
-                    break;
-            end
-            
-            ch = vif.out_cb.ast_channel;
-            assert(d.size() == 0) else d.delete();
+            if (!vif.out_cb.ast_valid || !vif.ast_ready) @ (vif.out_cb);
+
+            if (vif.out_cb.ast_startofpacket)
+                begin
+                    ch = vif.out_cb.ast_channel;
+                    assert(d.size() == 0) else d.delete();
+                end
 
             d.push_back(vif.out_cb.ast_data);
             
             @(vif.out_cb);
             
             while (!vif.out_cb.ast_endofpacket) begin
-                if (vif.out_cb.ast_valid) begin
-                    d.push_back(vif.out_cb.ast_data);
-                end
+                d.push_back(vif.out_cb.ast_data);
                 @(vif.out_cb);
             end
             
-            if (vif.out_cb.ast_valid) begin
-                d.push_back(vif.out_cb.ast_data);
-            end
+
+            d.push_back(vif.out_cb.ast_data);
             
             p = new();
             p.channel_i = ch;
