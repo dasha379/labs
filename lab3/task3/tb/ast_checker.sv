@@ -26,6 +26,8 @@ class ast_checker #(
         if (q.dir === p.dir)
             begin
                 $display("checking....");
+                if (q.ast_data_i.size() !== p.ast_data_i.size())
+                    $error("wrong data size =( expected: %d, got: %d", p.ast_data_i.size(), q.ast_data_i.size());
                 if (q.ast_data_i !== p.ast_data_i)
                     $error("wrong data: expected - %d, got - %d", p.ast_data_i, q.ast_data_i);
                 if (q.channel_i !== p.channel_i)
@@ -47,8 +49,6 @@ class ast_checker #(
             .EMPTY_WIDTH   (EMPTY_WIDTH),
             .CHANNEL_WIDTH (CHANNEL_WIDTH)
         ) q;
-
-        $display("starting checking");
         
         forever
             begin
@@ -60,14 +60,16 @@ class ast_checker #(
                     begin
                         drv2chk.get(p);
                         mon2chk.get(q);
-                        $display("received data");
                         check(p, q);
                         cnt += 1;
                         $display("TEST %d COMPLETED", cnt);
                     end
                 else
                     mon2chk.get(q);
-                if (cnt == trans) break;
+                if (cnt == trans) begin
+                    $display("check finished");
+                    break;
+                end
             end
     endtask
 endclass

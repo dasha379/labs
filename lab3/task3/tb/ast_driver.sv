@@ -69,7 +69,7 @@ class ast_driver #(
                                 begin
                                     while (!intf.in_cb.ast_ready) @ (intf.in_cb);
                                     drive((i == 0), i == (p.ast_data_i.size() - 1), p.ast_data_i[i], p.channel_i, p.empty_i, '1, p.dir);
-                                    $display("signals sent, data = %d", p.ast_data_i[i]);
+                                    $display("signals sent, data = %d, channel = %d", p.ast_data_i[i], p.channel_i);
                                 end
                             else
                                 begin

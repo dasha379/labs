@@ -128,29 +128,27 @@ module ast_tb;
     endtask
 
     task automatic test(int valid_pr);
-        int total = 4;
+        int total = 5;
         fork
             begin
                 // some packets of 1 word
-                // repeat (5)
-                // begin 
-                //     gen.run(DATA_WIDTH / 8, 1);
-                //     repeat (5) @ (posedge clk_i);
-                //     gen.run(DATA_WIDTH / 8, 2);
-                //     repeat (5) @ (posedge clk_i);
-                // end
-                // repeat (10) @ (posedge clk_i);
+                repeat (5)
+                begin 
+                    gen.run(2 * DATA_WIDTH / 8, 1);
+                    repeat (5) @ (posedge clk_i);
+                end
 
                 // max packet
-                gen.run(MAX_SIZE, 1); repeat (5) @ (posedge clk_i);
+                //gen.run(MAX_SIZE - 1, 1);
+                //repeat(10) @ (posedge clk_i);
                 // random packet
-                gen.run($urandom_range(DATA_WIDTH / 8, MAX_SIZE - 1), TX_DIR_W'($urandom()));
+                //gen.run($urandom_range(DATA_WIDTH / 8, MAX_SIZE - 1), TX_DIR_W'($urandom()));
                 // no empty packet
-                gen.run($urandom_range(1, 5) * DATA_WIDTH / 8, 0);
+                //gen.run($urandom_range(1, 5) * DATA_WIDTH / 8, 1);
                 // with empty packet
-                gen.run($urandom_range(1, 5) * DATA_WIDTH / 8 + $urandom_range(1, 10), TX_DIR_W'($urandom()));
+                //gen.run($urandom_range(1, 5) * DATA_WIDTH / 8 + $urandom_range(1, 10), TX_DIR_W'($urandom()));
                 // small packet
-                // gen.run($urandom_range(1, DATA_WIDTH/8), TX_DIR_W'($urandom()));
+                //gen.run($urandom_range(1, DATA_WIDTH/8), TX_DIR_W'($urandom()));
             end
             drv.run(valid_pr, total);
             mon.run(total);

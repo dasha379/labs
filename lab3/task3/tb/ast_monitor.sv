@@ -23,16 +23,13 @@ class ast_monitor #(
 
     task automatic run(int trans);
         for (int i = 0; i < TX_DIR; ++i) begin
-            virtual ast_interface #(
-                .DATA_WIDTH    (DATA_WIDTH),
-                .EMPTY_WIDTH   (EMPTY_WIDTH),
-                .CHANNEL_WIDTH (CHANNEL_WIDTH)
-            )   vif = intf[i];
             fork
-                monitor(trans, i, vif);
-                set_ready(vif);
-            join_any
+                automatic int j = i;
+                monitor(trans, j, intf[j]);
+                set_ready(intf[j]);
+            join_none
         end
+        
     endtask
 
     task automatic set_ready(virtual ast_interface vif);
@@ -50,34 +47,34 @@ class ast_monitor #(
         repeat(trans) begin
             if (!vif.out_cb.ast_valid || !vif.ast_ready) @ (vif.out_cb);
 
-            if (vif.out_cb.ast_startofpacket)
+            if (vif.out_cb.ast_startofpacket && vif.out_cb.ast_valid && vif.ast_ready)
                 begin
                     ch = vif.out_cb.ast_channel;
                     assert(d.size() == 0) else d.delete();
+                    d.push_back(vif.out_cb.ast_data);
                 end
-
-            d.push_back(vif.out_cb.ast_data);
-            
-            @(vif.out_cb);
             
             while (!vif.out_cb.ast_endofpacket) begin
                 d.push_back(vif.out_cb.ast_data);
-                @(vif.out_cb);
             end
-            
 
-            d.push_back(vif.out_cb.ast_data);
+            if (vif.out_cb.ast_endofpacket)
+                begin
+                    d.push_back(vif.out_cb.ast_data);
+                   // @(vif.out_cb);
+                        
+                    p = new();
+                    p.channel_i = ch;
+                    p.ast_data_i = d;
+                    p.empty_i = vif.out_cb.ast_empty;
+                    p.dir = dir;
+
+                    $display("MONITOR[%0d]: packet - words=%0d, empty=%0d, channel=%0d",
+                    dir, p.ast_data_i.size(), p.empty_i, p.channel_i);
             
-            p = new();
-            p.channel_i = ch;
-            p.ast_data_i = d;
-            p.empty_i = vif.out_cb.ast_empty;
-            p.dir = dir;
-            
-            $display("MONITOR[%0d]: PACKET CAPTURED - words=%0d, empty=%0d, channel=%0d, data=%0d",
-                     dir, p.ast_data_i.size(), p.empty_i, p.channel_i, p.ast_data_i[$]);
-            
-            mon2chk.put(p);
+                    mon2chk.put(p);
+                end
+
             @ (vif.out_cb);
         end
     endtask
