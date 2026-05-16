@@ -7,7 +7,7 @@ module ast_tb;
     parameter int CHANNEL_WIDTH = 8;
     parameter int TX_DIR = 4;
     localparam int MAX_SIZE = 65536;
-    localparam int TX_DIR_W = $clog2(TX_DIR);
+    localparam int DIR_WIDTH = $clog2(TX_DIR);
 
     bit clk_i, srst_i;
 
@@ -17,7 +17,7 @@ module ast_tb;
             forever #5 clk_i = ~clk_i;
         end
 
-    ast_interface_dir # (.DIR_W(TX_DIR_W)) dir_intf (
+    ast_interface_dir # (.DIR_W(DIR_WIDTH)) dir_intf (
         .clk(clk_i),
         .rst(srst_i)
     );
@@ -68,7 +68,7 @@ module ast_tb;
         .EMPTY_WIDTH        (EMPTY_WIDTH),
         .TX_DIR             (TX_DIR),
         .CHANNEL_WIDTH      (CHANNEL_WIDTH),
-        .DIR_SEL_WIDTH      (TX_DIR_W)
+        .DIR_SEL_WIDTH      (DIR_WIDTH)
     ) DUT (
         .clk_i              (clk_i),
         .srst_i             (srst_i),
@@ -128,27 +128,15 @@ module ast_tb;
     endtask
 
     task automatic test(int valid_pr);
-        int total = 5;
+        int total = 4;
         fork
             begin
-                // some packets of 1 word
-                repeat (5)
-                begin 
-                    gen.run(2 * DATA_WIDTH / 8, 1);
-                    repeat (5) @ (posedge clk_i);
-                end
-
-                // max packet
-                //gen.run(MAX_SIZE - 1, 1);
-                //repeat(10) @ (posedge clk_i);
-                // random packet
-                //gen.run($urandom_range(DATA_WIDTH / 8, MAX_SIZE - 1), TX_DIR_W'($urandom()));
-                // no empty packet
-                //gen.run($urandom_range(1, 5) * DATA_WIDTH / 8, 1);
-                // with empty packet
-                //gen.run($urandom_range(1, 5) * DATA_WIDTH / 8 + $urandom_range(1, 10), TX_DIR_W'($urandom()));
-                // small packet
-                //gen.run($urandom_range(1, DATA_WIDTH/8), TX_DIR_W'($urandom()));
+                //gen.one_p_data_width();
+                gen.no_empty();
+                // gen.with_empty();
+                // gen.max_p();
+                // gen.random_p();
+                // gen.one_p_one_byte();
             end
             drv.run(valid_pr, total);
             mon.run(total);
@@ -160,6 +148,7 @@ module ast_tb;
         begin
             intf_in.out_cb.ast_ready <= '1;
             reset();
+            repeat (2) @ (posedge clk_i);
             test(100);
             //test(0);
             //test(70);

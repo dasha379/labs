@@ -4,7 +4,8 @@ class ast_generator #(
     parameter int CHANNEL_WIDTH = 8,
     parameter int TX_DIR = 4
 );
-    localparam int TX_DIR_W = $clog2(TX_DIR);
+    localparam int DIR_WIDTH = $clog2(TX_DIR);
+    localparam int MAX_SIZE = 65536;
 
     mailbox#(ast_transaction) gen2drv;
     
@@ -12,27 +13,70 @@ class ast_generator #(
         this.gen2drv = gen2drv;
     endfunction
 
-    task automatic run(int size, int dir_val);
-        ast_transaction #(
-            .DATA_WIDTH    (DATA_WIDTH),
-            .EMPTY_WIDTH   (EMPTY_WIDTH),
-            .CHANNEL_WIDTH (CHANNEL_WIDTH)
-        ) p;
-        int words = size / (DATA_WIDTH / 8);
-        p = new();
+    task automatic no_empty();
+        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        for (int i = 0; i < TX_DIR; ++i)
+            begin
+                int size = $urandom_range(1, 10) * DATA_WIDTH / 8;
+                p = new(.dir(i));
+                p.gen_data(size);
+                gen2drv.put(p);
+            end
+    endtask
 
-        if (words == 0 && size > 0)
-            p.empty_i = DATA_WIDTH / 8 - 1;
-        else
-            p.empty_i = size % (DATA_WIDTH / 8);
+    task automatic with_empty();
+        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        for (int i = 0; i < TX_DIR; ++i)
+            begin
+                int size = $urandom_range(1, 10) * DATA_WIDTH / 8 + $urandom_range(1, DATA_WIDTH / 8 - 1);
+                p = new(.dir(i));
+                p.gen_data(size);
+                gen2drv.put(p);
+            end
+    endtask
 
-        p.channel_i = CHANNEL_WIDTH'($urandom());
-        p.dir = dir_val;
+    task automatic random_p();
+        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        for (int i = 0; i < TX_DIR; ++i)
+            begin
+                int size = $urandom_range(1, MAX_SIZE - 1);
+                p = new(.dir(i));
+                p.gen_data(size);
+                gen2drv.put(p);
+            end
+    endtask
 
-        if (words > 0)
-            for (int i = 0; i < words; ++i)
-                p.ast_data_i.push_back(DATA_WIDTH'($urandom()));
-        gen2drv.put(p);
+    task automatic max_p();
+        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        for (int i = 0; i < TX_DIR; ++i)
+            begin
+                int size = MAX_SIZE;
+                p = new(.dir(i));
+                p.gen_data(size);
+                gen2drv.put(p);
+            end
+    endtask
+
+    task automatic one_p_data_width();
+        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        for (int i = 0; i < TX_DIR; ++i)
+            begin
+                    int size = DATA_WIDTH / 8;
+                p = new(.dir(i));
+                p.gen_data(size);
+                gen2drv.put(p);
+            end
+    endtask
+
+    task automatic one_p_one_byte();
+        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        for (int i = 0; i < TX_DIR; ++i)
+            begin
+                int size = 1;
+                p = new(.dir(i));
+                p.gen_data(size);
+                gen2drv.put(p);
+            end
     endtask
 
 endclass

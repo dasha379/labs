@@ -4,7 +4,7 @@ class ast_checker #(
     parameter int CHANNEL_WIDTH = 8,
     parameter int TX_DIR = 4
 );
-    localparam int TX_DIR_W = $clog2(TX_DIR);
+    localparam int DIR_WIDTH = $clog2(TX_DIR);
 
     mailbox#(ast_transaction) drv2chk;
     mailbox#(ast_transaction) mon2chk;
@@ -16,56 +16,48 @@ class ast_checker #(
 
     task automatic check(ast_transaction #(
         .DATA_WIDTH    (DATA_WIDTH),
-        .EMPTY_WIDTH   (EMPTY_WIDTH),
+        .DIR_WIDTH     (DIR_WIDTH),
         .CHANNEL_WIDTH (CHANNEL_WIDTH)
     ) p, ast_transaction #(
         .DATA_WIDTH    (DATA_WIDTH),
-        .EMPTY_WIDTH   (EMPTY_WIDTH),
+        .DIR_WIDTH     (DIR_WIDTH),
         .CHANNEL_WIDTH (CHANNEL_WIDTH)
     ) q);
-        if (q.dir === p.dir)
-            begin
-                $display("checking....");
-                if (q.ast_data_i.size() !== p.ast_data_i.size())
-                    $error("wrong data size =( expected: %d, got: %d", p.ast_data_i.size(), q.ast_data_i.size());
-                if (q.ast_data_i !== p.ast_data_i)
-                    $error("wrong data: expected - %d, got - %d", p.ast_data_i, q.ast_data_i);
-                if (q.channel_i !== p.channel_i)
-                    $error("wrong channel signal: expected - %d, got - %d", p.channel_i, q.channel_i);
-                if (q.empty_i !== p.empty_i)
-                    $error("wrong empty signal: expected - %d, got - %d", p.empty_i, q.empty_i);
-            end
+        $display("checking....");
+        if (p.dir != q.dir) $error("mismathed packet types");
+        if (q.ast_data !== p.ast_data)
+            $error("wrong data: expected %b, got %b", p.ast_data, q.ast_data);
+        if (q.channel !== p.channel)
+            $error("wrong channel signal: expected %d, got %d", p.channel, q.channel);
+        if (q.ast_data.size() !== p.ast_data.size())
+            $error("size of data is wrong: expected %d, got %d", p.ast_data.size(), q.ast_data.size());
     endtask
 
     task automatic run(int trans);
         int cnt;
         ast_transaction #(
             .DATA_WIDTH    (DATA_WIDTH),
-            .EMPTY_WIDTH   (EMPTY_WIDTH),
+            .DIR_WIDTH     (DIR_WIDTH),
             .CHANNEL_WIDTH (CHANNEL_WIDTH)
         ) p;
         ast_transaction #(
             .DATA_WIDTH    (DATA_WIDTH),
-            .EMPTY_WIDTH   (EMPTY_WIDTH),
+            .DIR_WIDTH     (DIR_WIDTH),
             .CHANNEL_WIDTH (CHANNEL_WIDTH)
         ) q;
         
         forever
             begin
-                $display("%d", drv2chk.num());
-                $display("%d", mon2chk.num());
+                // $display("%d", drv2chk.num());
+                // $display("%d", mon2chk.num());
                 drv2chk.peek(p);
                 mon2chk.peek(q);
-                if (p.dir == q.dir)
-                    begin
-                        drv2chk.get(p);
-                        mon2chk.get(q);
-                        check(p, q);
-                        cnt += 1;
-                        $display("TEST %d COMPLETED", cnt);
-                    end
-                else
-                    mon2chk.get(q);
+                drv2chk.get(p);
+                mon2chk.get(q);
+                check(p, q);
+                cnt += 1;
+                $display("TEST %d COMPLETED", cnt);
+
                 if (cnt == trans) begin
                     $display("check finished");
                     break;
