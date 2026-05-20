@@ -28,7 +28,8 @@ class ast_generator #(
         ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
         for (int i = 0; i < TX_DIR; ++i)
             begin
-                int size = $urandom_range(1, 10) * DATA_WIDTH / 8 + $urandom_range(1, DATA_WIDTH / 8 - 1);
+                int empty = $urandom_range(1, DATA_WIDTH / 8 - 1);
+                int size = $urandom_range(1, 10) * DATA_WIDTH / 8 + empty;
                 p = new(.dir(i));
                 p.gen_data(size);
                 gen2drv.put(p);
@@ -40,6 +41,7 @@ class ast_generator #(
         for (int i = 0; i < TX_DIR; ++i)
             begin
                 int size = $urandom_range(1, MAX_SIZE - 1);
+                int empty = size % (DATA_WIDTH / 8);
                 p = new(.dir(i));
                 p.gen_data(size);
                 gen2drv.put(p);
@@ -48,20 +50,18 @@ class ast_generator #(
 
     task automatic max_p();
         ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
-        for (int i = 0; i < TX_DIR; ++i)
-            begin
-                int size = MAX_SIZE;
-                p = new(.dir(i));
-                p.gen_data(size);
-                gen2drv.put(p);
-            end
+        int d = 2;
+        int size = MAX_SIZE;
+        p = new(.dir(d));
+        p.gen_data(size);
+        gen2drv.put(p);
     endtask
 
     task automatic one_p_data_width();
         ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
         for (int i = 0; i < TX_DIR; ++i)
             begin
-                    int size = DATA_WIDTH / 8;
+                int size = DATA_WIDTH / 8;
                 p = new(.dir(i));
                 p.gen_data(size);
                 gen2drv.put(p);
@@ -73,6 +73,7 @@ class ast_generator #(
         for (int i = 0; i < TX_DIR; ++i)
             begin
                 int size = 1;
+                int empty = size;
                 p = new(.dir(i));
                 p.gen_data(size);
                 gen2drv.put(p);

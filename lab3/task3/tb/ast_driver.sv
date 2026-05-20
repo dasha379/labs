@@ -49,7 +49,7 @@ class ast_driver #(
             begin
                 if (p.ast_data.size() > 0) begin
                     word[i*8 +: 8] = p.ast_data.pop_front();
-                    //$display(word[i*8+:8]);
+                    //$display("driver data = %d", word[i*8+:8]);
                 end
             end
         return word;
@@ -103,7 +103,7 @@ class ast_driver #(
                 drv2chk.put(p_new);
 
                 size = p.ast_data.size();
-
+                empty = get_empty(p);
                 do
                     begin
                         if ($urandom_range(1, 100) <= prob)
@@ -113,9 +113,10 @@ class ast_driver #(
                                 $display("i=%d", i);
                                 //size = p.ast_data.size();
                                 w = get_word(p);
-                                empty = get_empty(p);
+                                
                                 drive((i == 0), (p.ast_data.size()==0), w, p.channel, empty, '1, p.dir);
-                                $display("signals sent, data = %d, channel = %d", w, p.channel);
+                                
+                                $display("signals sent, data = %d, channel = %d, dir = %d", w, p.channel, p.dir);
                             end
                         else
                             begin

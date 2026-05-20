@@ -7,3 +7,4 @@ simulation
 work
 transcript
 vsim.wlf
+*.vstf

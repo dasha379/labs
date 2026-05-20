@@ -25,7 +25,7 @@ class ast_monitor #(
     task automatic run(int trans);
         for (int i = 0; i < TX_DIR; ++i) begin
             fork
-                automatic int j = i;
+                int j = i;
                 monitor(trans, j, intf[j]);
                 set_ready(intf[j]);
             join_none
@@ -47,11 +47,10 @@ class ast_monitor #(
             .CHANNEL_WIDTH (CHANNEL_WIDTH)
         ) p;
 
-        logic [7 : 0] buffer [$];
-        logic [CHANNEL_WIDTH - 1 : 0] ch;
-        int cnt = 0;
-
         forever begin
+            logic [7 : 0] buffer [$];
+            logic [CHANNEL_WIDTH - 1 : 0] ch = 0;
+            int cnt = 0;
             while (!(vif.out_cb.ast_valid && vif.ast_ready))
                 begin
                     @(vif.out_cb);
@@ -59,24 +58,32 @@ class ast_monitor #(
 
             if (vif.out_cb.ast_startofpacket)
                 begin
-                    buffer.delete();
+                    assert(buffer.size()==0) else buffer.delete();
                     ch = vif.out_cb.ast_channel;
                 end
-
-            for (int i = 0; i < DATA_WIDTH/8; ++i)
-                buffer.push_back(vif.out_cb.ast_data[i*8 +: 8]);
+            
+            while (!vif.out_cb.ast_endofpacket) begin
+                for (int i = 0; i < DATA_WIDTH/8; ++i)
+                    buffer.push_back(vif.out_cb.ast_data[i*8 +: 8]);
+                @(vif.out_cb);
+            end
             
             if (vif.out_cb.ast_endofpacket)
                 begin
+                    for (int i = 0; i < DATA_WIDTH/8; ++i)
+                        buffer.push_back(vif.out_cb.ast_data[i*8 +: 8]);
                     p = new(ch, dir);
                     p.ast_data = buffer;
                     p.channel = ch;
                     p.dir = dir;
                     
-                    $display("monitor received: channel = %d, dir = %d, data = %d", ch, dir, buffer[$]);
+                    $display("monitor received: channel = %d, dir = %d", ch, dir);
+                    //for (int i = 0; i < buffer.size();++i) $display("data = %d", buffer[i]);
                     mon2chk.put(p);
+                    buffer.delete();
                 end
-
+            // cnt += 1;
+            // if (cnt == trans) break;
             @ (vif.out_cb);
         end
     endtask

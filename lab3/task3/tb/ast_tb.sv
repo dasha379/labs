@@ -132,9 +132,9 @@ module ast_tb;
         fork
             begin
                 //gen.one_p_data_width();
-                gen.no_empty();
-                // gen.with_empty();
-                // gen.max_p();
+                //gen.no_empty();
+                gen.with_empty();
+                //gen.max_p();
                 // gen.random_p();
                 // gen.one_p_one_byte();
             end
@@ -142,6 +142,7 @@ module ast_tb;
             mon.run(total);
             chk.run(total);
         join
+        
     endtask
 
     initial
