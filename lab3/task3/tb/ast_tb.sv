@@ -132,12 +132,13 @@ module ast_tb;
         fork
             begin
                 //gen.one_p_data_width();
-                //gen.no_empty();
-                gen.with_empty();
+                gen.no_empty();
+                //gen.with_empty();
                 //gen.max_p();
                 // gen.random_p();
-                // gen.one_p_one_byte();
+                //gen.one_p_one_byte();
             end
+            
             drv.run(valid_pr, total);
             mon.run(total);
             chk.run(total);
@@ -150,6 +151,7 @@ module ast_tb;
             intf_in.out_cb.ast_ready <= '1;
             reset();
             repeat (2) @ (posedge clk_i);
+            
             test(100);
             //test(0);
             //test(70);

@@ -7,6 +7,8 @@ class ast_generator #(
     localparam int DIR_WIDTH = $clog2(TX_DIR);
     localparam int MAX_SIZE = 65536;
 
+    typedef ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) tr;
+
     mailbox#(ast_transaction) gen2drv;
     
     function new(mailbox#(ast_transaction) gen2drv);
@@ -14,7 +16,7 @@ class ast_generator #(
     endfunction
 
     task automatic no_empty();
-        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        tr p;
         for (int i = 0; i < TX_DIR; ++i)
             begin
                 int size = $urandom_range(1, 10) * DATA_WIDTH / 8;
@@ -25,7 +27,7 @@ class ast_generator #(
     endtask
 
     task automatic with_empty();
-        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        tr p;
         for (int i = 0; i < TX_DIR; ++i)
             begin
                 int empty = $urandom_range(1, DATA_WIDTH / 8 - 1);
@@ -37,7 +39,7 @@ class ast_generator #(
     endtask
 
     task automatic random_p();
-        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        tr p;
         for (int i = 0; i < TX_DIR; ++i)
             begin
                 int size = $urandom_range(1, MAX_SIZE - 1);
@@ -49,7 +51,7 @@ class ast_generator #(
     endtask
 
     task automatic max_p();
-        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        tr p;
         int d = 2;
         int size = MAX_SIZE;
         p = new(.dir(d));
@@ -58,7 +60,7 @@ class ast_generator #(
     endtask
 
     task automatic one_p_data_width();
-        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
+        tr p;
         for (int i = 0; i < TX_DIR; ++i)
             begin
                 int size = DATA_WIDTH / 8;
@@ -69,15 +71,14 @@ class ast_generator #(
     endtask
 
     task automatic one_p_one_byte();
-        ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) p;
-        for (int i = 0; i < TX_DIR; ++i)
-            begin
-                int size = 1;
-                int empty = size;
-                p = new(.dir(i));
-                p.gen_data(size);
-                gen2drv.put(p);
-            end
+        tr p;
+        //logic [DIR_WIDTH - 1 : 0] d = DIR_WIDTH'($urandom());
+        logic [DIR_WIDTH - 1 : 0] d = 1;
+        int size = 1;
+        int empty = size;
+        p = new(.dir(d));
+        p.gen_data(size);
+        gen2drv.put(p);
     endtask
 
 endclass

@@ -5,6 +5,9 @@ class ast_monitor #(
     parameter int TX_DIR = 4
 );
     localparam int DIR_WIDTH = $clog2(TX_DIR);
+
+    typedef ast_transaction # (.DATA_WIDTH(DATA_WIDTH), .CHANNEL_WIDTH(CHANNEL_WIDTH), .DIR_WIDTH(DIR_WIDTH)) tr;
+    
     virtual ast_interface #(
         .DATA_WIDTH    (DATA_WIDTH),
         .EMPTY_WIDTH   (EMPTY_WIDTH),
@@ -30,7 +33,6 @@ class ast_monitor #(
                 set_ready(intf[j]);
             join_none
         end
-        
     endtask
 
     task automatic set_ready(virtual ast_interface vif);
@@ -41,13 +43,8 @@ class ast_monitor #(
     endtask
 
     task automatic monitor(int trans, int dir, virtual ast_interface vif);
-        ast_transaction #(
-            .DATA_WIDTH    (DATA_WIDTH),
-            .DIR_WIDTH   (DIR_WIDTH),
-            .CHANNEL_WIDTH (CHANNEL_WIDTH)
-        ) p;
-
         forever begin
+            tr p;
             logic [7 : 0] buffer [$];
             logic [CHANNEL_WIDTH - 1 : 0] ch = 0;
             int cnt = 0;
@@ -61,6 +58,7 @@ class ast_monitor #(
                     assert(buffer.size()==0) else buffer.delete();
                     ch = vif.out_cb.ast_channel;
                 end
+            else while (!vif.out_cb.ast_startofpacket) @(vif.out_cb);
             
             while (!vif.out_cb.ast_endofpacket) begin
                 for (int i = 0; i < DATA_WIDTH/8; ++i)
@@ -79,11 +77,9 @@ class ast_monitor #(
                     
                     $display("monitor received: channel = %d, dir = %d", ch, dir);
                     //for (int i = 0; i < buffer.size();++i) $display("data = %d", buffer[i]);
-                    mon2chk.put(p);
+                    mon2chk.put(p.copy());
                     buffer.delete();
                 end
-            // cnt += 1;
-            // if (cnt == trans) break;
             @ (vif.out_cb);
         end
     endtask

@@ -19,4 +19,19 @@ class ast_transaction  #(
         for (int i = 0; i < size; ++i)
             ast_data.push_back($urandom_range(0, 255));
     endfunction
+
+    function ast_transaction #(
+            .DATA_WIDTH    (DATA_WIDTH),
+            .DIR_WIDTH     (DIR_WIDTH),
+            .CHANNEL_WIDTH (CHANNEL_WIDTH)
+        ) copy();
+        ast_transaction #(
+            .DATA_WIDTH    (DATA_WIDTH),
+            .DIR_WIDTH     (DIR_WIDTH),
+            .CHANNEL_WIDTH (CHANNEL_WIDTH)
+        ) c = new(this.channel, this.dir);
+        for (int i = 0; i < this.ast_data.size(); i++)
+            c.ast_data.push_back(this.ast_data[i]);
+        return c;
+    endfunction
 endclass
